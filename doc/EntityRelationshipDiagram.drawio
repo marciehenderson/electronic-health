@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-05-14T15:37:39.892Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="5u5vKMwvQrPCyaPkVu5u" version="24.4.0" type="github">
+<mxfile host="app.diagrams.net" modified="2024-05-14T15:38:20.221Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="eClKJP_tuxPubNVw-NGy" version="24.4.0" type="github">
   <diagram name="Credentials &amp; Patient Registry" id="eqYuc8Sgv0YEJW-9Jb40">
     <mxGraphModel dx="1221" dy="765" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
@@ -411,7 +411,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="wjAVMQVNI6CG40twRgSc-26" value="visits" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;" parent="wjAVMQVNI6CG40twRgSc-24" vertex="1">
+        <mxCell id="wjAVMQVNI6CG40twRgSc-26" value="visitNumber" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;" parent="wjAVMQVNI6CG40twRgSc-24" vertex="1">
           <mxGeometry x="60" width="130" height="30" as="geometry">
             <mxRectangle width="130" height="30" as="alternateBounds" />
           </mxGeometry>
