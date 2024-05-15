@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-05-15T17:59:26.374Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="QAGLbo4nD9HrcR5ECHZU" version="24.4.1" type="github" pages="2">
+<mxfile host="app.diagrams.net" modified="2024-05-15T18:01:13.654Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="pyO8ilM7C20hQDZSjGzx" version="24.4.1" type="github" pages="2">
   <diagram name="desktop-login" id="c9db0220-8083-56f3-ca83-edcdcd058819">
     <mxGraphModel dx="2713" dy="1700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1.5" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
       <root>
@@ -12,6 +12,9 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="YhSoiyIvWjz7-mE4G_67-62" value="" style="shape=rect;fillColor=#eeeeee;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry width="900" height="1600" as="geometry" />
+        </mxCell>
         <mxCell id="YhSoiyIvWjz7-mE4G_67-16" value="" style="dashed=0;shape=rect;fillColor=#263238;strokeColor=none;aspect=fixed;fontSize=35;" vertex="1" parent="1">
           <mxGeometry y="1040" width="895" height="560" as="geometry" />
         </mxCell>
