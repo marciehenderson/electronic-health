@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-05-15T18:14:15.938Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="MM4oTCunsz5O8DANsoYQ" version="24.4.1" type="github" pages="2">
+<mxfile host="app.diagrams.net" modified="2024-05-15T18:28:11.191Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="LOswcUei3jyLLwliGvS0" version="24.4.1" type="github" pages="2">
   <diagram name="desktop-login" id="c9db0220-8083-56f3-ca83-edcdcd058819">
     <mxGraphModel dx="2713" dy="1700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1.5" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
       <root>
@@ -8,12 +8,12 @@
     </mxGraphModel>
   </diagram>
   <diagram id="p0Vwhbz7SKANTDWl1LRv" name="mobile-login">
-    <mxGraphModel dx="1110" dy="695" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="1221" dy="799" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="0.41" pageWidth="900" pageHeight="1600" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="YhSoiyIvWjz7-mE4G_67-127" value="" style="dashed=0;shape=rect;fillColor=#ffffff;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="271" y="479" width="358" height="642" as="geometry" />
+        <mxCell id="YhSoiyIvWjz7-mE4G_67-127" value="" style="dashed=0;shape=rect;fillColor=#ffffff;strokeColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="1">
+          <mxGeometry x="6" y="7" width="358" height="642" as="geometry" />
         </mxCell>
         <mxCell id="YhSoiyIvWjz7-mE4G_67-128" value="12:30" style="dashed=0;shape=rect;align=right;fillColor=#00A0B4;strokeColor=none;fontColor=#FFFFFF;spacingRight=4;spacingTop=1;fontStyle=0;fontSize=13;resizeWidth=1;html=1;whiteSpace=wrap;" vertex="1" parent="YhSoiyIvWjz7-mE4G_67-127">
           <mxGeometry width="358" height="24" relative="1" as="geometry" />
