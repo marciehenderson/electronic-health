@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-05-16T16:04:20.072Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="tNWKP8BySwPJEXHrTdAj" version="24.4.2" type="github" pages="4">
+<mxfile host="app.diagrams.net" modified="2024-05-16T16:09:22.260Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="9gCc-3FD9fG7k1E8DZDD" version="24.4.2" type="github" pages="4">
   <diagram name="desktop-login" id="c9db0220-8083-56f3-ca83-edcdcd058819" />
   <diagram id="p0Vwhbz7SKANTDWl1LRv" name="mobile-login" />
   <diagram name="desktop-remote" id="Gdic7sGwonePZ_yOQxv_">
@@ -166,6 +166,9 @@
         </mxCell>
         <mxCell id="f3sV0_q_p_fA2RtlccKc-38" value="&lt;div&gt;Action Container&lt;br&gt;&lt;/div&gt;" style="shape=rect;strokeColor=none;whiteSpace=wrap;html=1;align=center;spacingLeft=16;fontColor=#666666;fontSize=14;" vertex="1" parent="f3sV0_q_p_fA2RtlccKc-37">
           <mxGeometry width="344" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="f3sV0_q_p_fA2RtlccKc-39" value="&lt;div&gt;Action Description&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;lorem ipsum dolor ...&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="shape=rect;strokeColor=none;fillColor=default;fontColor=default;align=left;spacing=10;fontSize=16;spacingLeft=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="u29zFzrB0r52TXUVGwIv-2">
+          <mxGeometry x="122" y="132" width="230" height="188" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
