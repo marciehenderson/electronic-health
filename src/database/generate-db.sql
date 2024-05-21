@@ -1,11 +1,14 @@
+-- Execute on MySQL using source /path/to/generate-db.sql
+
 -- Create the database
-CREATE DATABASE IF NOT EXISTS ehealth;
+DROP DATABASE IF EXISTS ehealth;
+CREATE DATABASE ehealth;
 USE ehealth;
 
 -- Create the tables
 
 -- Users table
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS user (
     id INT AUTO_INCREMENT,
     category ENUM('patient', 'practitioner', 'admin') NOT NULL,
     password_hash CHAR(100) NOT NULL,
