@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "es6", // Specify the ECMAScript target version
+        "module": "commonjs", // Specify the module system
+        "outDir": "./dist", // Specify the output directory for compiled files
+        "strict": true, // Enable strict type-checking
+        "esModuleInterop": true, // Enable compatibility with CommonJS modules
+        "removeComments": true, // Remove comments from the compiled files
+        "sourceMap": true, // Generate source maps
+    },
+    "files": [
+        "./app.ts"
+    ]
+}
