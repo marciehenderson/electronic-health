@@ -4,21 +4,22 @@
     <title>Patient Registry</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <div id="header">
         <h1><a role="button" onclick="window.location.hash='';window.location.reload()">Patient Registry</a></h1>
         <nav>
-            <ul>
-                <li><a role="button" onclick="window.location.hash='account'">Account</a></li>
-                <li><a role="button" onclick="window.location.hash='actions'">Actions</a></li>
-                <li><a role="button" onclick="window.location.hash='support'">Support</a></li>
-            </ul>
+            <md-tabs>
+                <md-primary-tab role="button" onclick="window.location.hash='account'">Account</md-primary-tab>
+                <md-primary-tab role="button" onclick="window.location.hash='actions'">Actions</md-primary-tab>
+                <md-primary-tab role="button" onclick="window.location.hash='support'">Support</md-primary-tab>
+            </md-tabs>
         </nav>
     </div>
     <div id="app">
         <!--dynamically loaded content-->
     </div>
-    <script src="./dist/app.js"></script>
+    <script src="./dist/bundle.js"></script>
 </body>
 </html>
