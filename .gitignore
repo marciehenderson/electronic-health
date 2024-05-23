@@ -1,0 +1,14 @@
+# Ignore dist directory
+/src/frontend/dist
+
+# Ignore node_modules directory
+/src/frontend/node_modules
+
+# Ignore tsconfig.json file
+/src/frontend/tsconfig.json
+
+# Ignore package-lock.json file
+/src/frontend/package-lock.json
+
+# Ignore package.json file
+/src/frontend/package.json
