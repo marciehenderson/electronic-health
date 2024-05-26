@@ -41,69 +41,135 @@ const actionsView = (subhash: string): void => {
     actions.classList.add('view');
     document.getElementById('app')!.appendChild(actions);
     const actionsSubView = document.createElement('div');
+    const actionFormStart: string = `
+        <div class="view-top-padding"></div>
+        <div class="view-input-container">
+            <md-outlined-text-field label="Patient ID" type="search">
+                <md-icon slot="trailing-icon">search</md-icon>
+            </md-outlined-text-field>
+    `;
     switch (subhash) {
         default:
         case 'create':
+            // prepend active indicator bar and append form fields
             actionsSubView.innerHTML = `
                 <div class="action-indicator-bar">
                     <div class="active-indicator"></div>
                     <div></div>
                     <div></div>
                 </div>
-                <div class="view-top-padding"></div>
-                <div class="view-input-container">
-                    <md-outlined-text-field label="Patient ID" type="search">
-                        <md-icon slot="trailing-icon">search</md-icon>
-                    </md-outlined-text-field>
-                    <md-outlined-text-field label="Location ID" type="search">
-                        <md-icon slot="trailing-icon">search</md-icon>
-                    </md-outlined-text-field>
-                    <md-outlined-select label="Type">
-                        <md-select-option value="1">
-                            <div slot="headline">Check-Up</div>
-                        </md-select-option>
-                        <md-select-option value="2">
-                            <div slot="headline">Annual</div>
-                        </md-select-option>
-                        <md-select-option value="3">
-                            <div slot="headline">Blood-Work</div>
-                        </md-select-option>
-                        <md-select-option value="4">
-                            <div slot="headline">Vaccination</div>
-                        </md-select-option>
-                        <md-select-option value="5">
-                            <div slot="headline">Emergency</div>
-                        </md-select-option>
-                    </md-outlined-select>
-                    <md-outlined-text-field label="Notes" type="textarea">
-                    </md-outlined-text-field>
-                    <md-elevated-button type="submit">Submit</md-elevated-button>
-                </div>
+            ` + actionFormStart + `
+                <md-outlined-text-field label="Location ID" type="search">
+                    <md-icon slot="trailing-icon">search</md-icon>
+                </md-outlined-text-field>
+                <md-outlined-select label="Record Type">
+                    <md-select-option value="1">
+                        <div slot="headline">Check-Up</div>
+                    </md-select-option>
+                    <md-select-option value="2">
+                        <div slot="headline">Annual</div>
+                    </md-select-option>
+                    <md-select-option value="3">
+                        <div slot="headline">Blood-Work</div>
+                    </md-select-option>
+                    <md-select-option value="4">
+                        <div slot="headline">Vaccination</div>
+                    </md-select-option>
+                    <md-select-option value="5">
+                        <div slot="headline">Emergency</div>
+                    </md-select-option>
+                </md-outlined-select>
+                <md-outlined-text-field label="Notes" type="textarea">
+                </md-outlined-text-field>
             `;
             break;
         case 'modify':
+            // prepend active indicator bar and append form fields
             actionsSubView.innerHTML = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div class="active-indicator"></div>
                     <div></div>
                 </div>
-                <div class="view-top-padding"></div>
-                <h1>Modify Record</h1>
+            ` + actionFormStart + `
+                <md-outlined-select label="Record Date">
+                    <md-select-option value="1">
+                        <div slot="headline">01/01/2021</div>
+                    </md-select-option>
+                    <md-select-option value="2">
+                        <div slot="headline">01/02/2021</div>
+                    </md-select-option>
+                    <md-select-option value="3">
+                        <div slot="headline">01/03/2021</div>
+                    </md-select-option>
+                    <md-select-option value="4">
+                        <div slot="headline">01/04/2021</div>
+                    </md-select-option>
+                    <md-select-option value="5">
+                        <div slot="headline">01/05/2021</div>
+                    </md-select-option>
+                </md-outlined-select>
+                <md-outlined-select label="Edit Value">
+                    <md-select-option value="1">
+                        <div slot="headline">Location ID</div>
+                    </md-select-option>
+                    <md-select-option value="2">
+                        <div slot="headline">Record Type</div>
+                    </md-select-option>
+                    <md-select-option value="3">
+                        <div slot="headline">Notes</div>
+                    </md-select-option>
+                </md-outlined-select>
+                <div id="form-generated-container"></div>
             `;
+            // note dates are hardcoded for example, should 
+            // be generated from existing database records.
+            // the date and edit value should be unselectable
+            // until a patient ID is entered.
+            // the form-generated-container will be populated
+            // with the appropriate form fields based on the
+            // selected edit value.
             break;
         case 'view':
+            // prepend active indicator bar and append form fields
             actionsSubView.innerHTML = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div></div>
                     <div class="active-indicator"></div>
                 </div>
-                <div class="view-top-padding"></div>
-                <h1>View Record</h1>
+            ` + actionFormStart + `
+                <md-outlined-select label="Record Date">
+                    <md-select-option value="1">
+                        <div slot="headline">01/01/2021</div>
+                    </md-select-option>
+                    <md-select-option value="2">
+                        <div slot="headline">01/02/2021</div>
+                    </md-select-option>
+                    <md-select-option value="3">
+                        <div slot="headline">01/03/2021</div>
+                    </md-select-option>
+                    <md-select-option value="4">
+                        <div slot="headline">01/04/2021</div>
+                    </md-select-option>
+                    <md-select-option value="5">
+                        <div slot="headline">01/05/2021</div>
+                    </md-select-option>
+                </md-outlined-select>
+                <div id="form-generated-container"></div>
             `;
+            // the date should be unselectable until a patient
+            // ID is entered.
+            // the form-generated-container will be populated
+            // with the appropriate form fields based on the
+            // selected record.
             break;
     };
+    // append submit button and closing tag
+    actionsSubView.innerHTML += `
+            <md-elevated-button type="submit">Submit</md-elevated-button>
+        </div>
+    `;
     actionsSubView.classList.add('subview');
     document.getElementsByClassName('view')[0]!.appendChild(actionsSubView);
 };
@@ -117,6 +183,11 @@ const supportView = (): void => {
             <md-list-item>Email: example@example.com</md-list-item>
             <md-list-item>Address: 1234 Example St.</md-list-item>
             <md-list-item>Hours: 9am-5pm</md-list-item>
+            <md-list-item>
+                <md-filled-text-field label="Contact Support" type="textarea">
+                </md-filled-text-field>
+            </md-list-item>
+            <md-elevated-button type="submit">Submit</md-elevated-button>
         </md-list>
     `;
     support.classList.add('view');

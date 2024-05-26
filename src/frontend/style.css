@@ -16,6 +16,7 @@
     --md-outlined-select-text-field-input-text-color: #fef7ff;
     --md-outlined-select-text-field-outline-color: #fef7ff;
     --md-outlined-select-text-field-focus-outline-color: #000000;
+    --md-focus-ring-color: #fef7ff;
 }
 /* document-wide style */
 body {
@@ -59,6 +60,26 @@ body {
 /* app page view secondary tab style */
 .view md-tabs {
     width: 100%;
+}
+/* app page list style */
+.view md-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80%;
+    border-style: solid;
+    border-color: var(--md-secondary-tab-container-color);
+    border-width: 0.25em;
+    border-radius: 0.25em;
+}
+/* app page view textarea style */
+.view md-list-item md-filled-text-field{
+    width: 60dvw;
+    min-width: 60dvw;
+    max-width: 60dvw;
+    height: 10em;
+    max-height: 20dvh;
+    min-height: 5em;
 }
 .view .view-input-container {
     display: flex;
