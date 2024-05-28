@@ -17,13 +17,13 @@ const accountView = (): void => {
     const account = document.createElement('account');
     account.innerHTML = `
         <div class="view-top-padding"></div>
-        <div class="view-input-container">
-            <md-outlined-text-field label="Username" type="text">
+        <form class="view-input-container" action="/login" method="post">
+            <md-outlined-text-field name="username" label="Username" type="text" required>
             </md-outlined-text-field>
-            <md-outlined-text-field label="Password" type="password">
+            <md-outlined-text-field name="password" label="Password" type="password" required>
             </md-outlined-text-field>
-        </div>
-        <md-elevated-button type="submit">Login</md-elevated-button>
+            <md-elevated-button type="submit">Login</md-elevated-button>
+        </form>
     `;
     account.classList.add('view');
     document.getElementById('app')!.appendChild(account);
