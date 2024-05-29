@@ -32,22 +32,39 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, "../frontend/style.css")
 		}
 	case "POST":
-		// Handle POST requests - Not implemented
+		// Handle POST requests
 		if r.URL.Path == "/login" {
-			// Parse form data
+			// Parse login form data
 			r.ParseForm()
-			var username = r.Form.Get("username")
-			var password = r.Form.Get("password")
 			// Validate user credentials
-			username = inputValidation(username, "login")
-			password = inputValidation(password, "login")
+			var username = inputValidation(r.Form.Get("username"), "login")
+			var password = inputValidation(r.Form.Get("password"), "login")
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
-			// Check if user credentials are valid
-
 			// reload account page
 			w.Header().Set("Content-Type", "text/html")
 			http.ServeFile(w, r, "../frontend/index.html")
+		}
+		if r.URL.Path == "/action" {
+			// Parse action form data
+			r.ParseForm()
+			var subHash = "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "login")
+			var patientID = inputValidation(r.Form.Get("patient_id"), "login")
+			var locationID = inputValidation(r.Form.Get("location_id"), "login")
+			var recordDate = inputValidation(r.Form.Get("record_date"), "login")
+			var recordType = inputValidation(r.Form.Get("record_type"), "login")
+			var editValue = inputValidation(r.Form.Get("edit_value"), "login")
+			var notes = inputValidation(r.Form.Get("notes"), "login")
+			fmt.Println("Sub Hash: " + subHash)
+			fmt.Println("Patient ID: " + patientID)
+			fmt.Println("Location ID: " + locationID)
+			fmt.Println("Record Date: " + recordDate)
+			fmt.Println("Record Type: " + recordType)
+			fmt.Println("Edit Value: " + editValue)
+			fmt.Println("Notes: " + notes)
+			// reload action page
+			w.Header().Set("Content-Type", "text/html")
+			http.Redirect(w, r, subHash, http.StatusSeeOther)
 		}
 	default:
 		// Handle all other requests - Not implemented

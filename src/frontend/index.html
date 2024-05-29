@@ -8,14 +8,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"/>
 
 </head>
-<body onload="window.location.hash='account';window.location.pathname='/'">
+<!--If no hash is given, default to #account-->
+<body onload="if(window.location.hash===''){window.location.hash='account';}window.location.pathname='/';">
     <div id="header">
         <h1><a role="button" onclick="window.location.hash='account';window.location.reload();">Patient Registry</a></h1>
         <nav>
             <md-tabs>
-                <md-primary-tab role="button" onclick="window.location.hash='account'" id="account">Account</md-primary-tab>
-                <md-primary-tab role="button" onclick="window.location.hash='actions'" id="actions">Actions</md-primary-tab>
-                <md-primary-tab role="button" onclick="window.location.hash='support'" id="support">Support</md-primary-tab>
+                <md-primary-tab role="button" onload="activeTab(this)" onclick="window.location.hash='account'" id="account">Account</md-primary-tab>
+                <md-primary-tab role="button" onload="activeTab(this)" onclick="window.location.hash='actions'" id="actions">Actions</md-primary-tab>
+                <md-primary-tab role="button" onload="activeTab(this)" onclick="window.location.hash='support'" id="support">Support</md-primary-tab>
             </md-tabs>
         </nav>
     </div>

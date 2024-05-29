@@ -36,56 +36,58 @@ const actionsView = (subhash) => {
     actions.classList.add('view');
     document.getElementById('app').appendChild(actions);
     const actionsSubView = document.createElement('div');
-    const actionFormStart = `
+    var actionFormInner = `
         <div class="view-top-padding"></div>
-        <div class="view-input-container">
-            <md-outlined-text-field label="Patient ID" type="search">
+        <form class="view-input-container" action="/action" method="post">
+            <md-outlined-text-field name="patient_id" label="Patient ID" type="text" required>
                 <md-icon slot="trailing-icon">search</md-icon>
             </md-outlined-text-field>
     `;
     switch (subhash) {
         default:
         case 'create':
-            actionsSubView.innerHTML = `
+            actionFormInner = `
                 <div class="action-indicator-bar">
                     <div class="active-indicator"></div>
                     <div></div>
                     <div></div>
                 </div>
-            ` + actionFormStart + `
-                <md-outlined-text-field label="Location ID" type="search">
+            ` + actionFormInner + `
+                <input name="sub_hash" type="text" value="create" style="display: none;"></input>
+                <md-outlined-text-field name="location_id" label="Location ID" type="text" required>
                     <md-icon slot="trailing-icon">search</md-icon>
                 </md-outlined-text-field>
-                <md-outlined-select label="Record Type">
-                    <md-select-option value="1">
+                <md-outlined-select name="record_type" label="Record Type" type="text" required>
+                    <md-select-option value="checkup">
                         <div slot="headline">Check-Up</div>
                     </md-select-option>
-                    <md-select-option value="2">
+                    <md-select-option value="annual">
                         <div slot="headline">Annual</div>
                     </md-select-option>
-                    <md-select-option value="3">
+                    <md-select-option value="bloodwork">
                         <div slot="headline">Blood-Work</div>
                     </md-select-option>
-                    <md-select-option value="4">
+                    <md-select-option value="vaccination">
                         <div slot="headline">Vaccination</div>
                     </md-select-option>
-                    <md-select-option value="5">
+                    <md-select-option value="emergency">
                         <div slot="headline">Emergency</div>
                     </md-select-option>
                 </md-outlined-select>
-                <md-outlined-text-field label="Notes" type="textarea">
+                <md-outlined-text-field name="notes" label="Notes" type="textarea">
                 </md-outlined-text-field>
             `;
             break;
         case 'modify':
-            actionsSubView.innerHTML = `
+            actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div class="active-indicator"></div>
                     <div></div>
                 </div>
-            ` + actionFormStart + `
-                <md-outlined-select label="Record Date">
+            ` + actionFormInner + `
+                <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
+                <md-outlined-select name="record_date" label="Record Date" type="text" required>
                     <md-select-option value="1">
                         <div slot="headline">01/01/2021</div>
                     </md-select-option>
@@ -102,7 +104,7 @@ const actionsView = (subhash) => {
                         <div slot="headline">01/05/2021</div>
                     </md-select-option>
                 </md-outlined-select>
-                <md-outlined-select label="Edit Value">
+                <md-outlined-select name="edit_value" label="Edit Value" type="text" required>
                     <md-select-option value="1">
                         <div slot="headline">Location ID</div>
                     </md-select-option>
@@ -117,14 +119,15 @@ const actionsView = (subhash) => {
             `;
             break;
         case 'view':
-            actionsSubView.innerHTML = `
+            actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div></div>
                     <div class="active-indicator"></div>
                 </div>
-            ` + actionFormStart + `
-                <md-outlined-select label="Record Date">
+            ` + actionFormInner + `
+                <input name="sub_hash" type="text" value="view" style="display: none;"></input>
+                <md-outlined-select name="record_date" label="Record Date" type="text" required>
                     <md-select-option value="1">
                         <div slot="headline">01/01/2021</div>
                     </md-select-option>
@@ -146,10 +149,11 @@ const actionsView = (subhash) => {
             break;
     }
     ;
-    actionsSubView.innerHTML += `
+    actionFormInner += `
             <md-elevated-button type="submit">Submit</md-elevated-button>
-        </div>
+        </form>
     `;
+    actionsSubView.innerHTML = actionFormInner;
     actionsSubView.classList.add('subview');
     document.getElementsByClassName('view')[0].appendChild(actionsSubView);
 };
@@ -190,6 +194,21 @@ const showView = (hash) => {
             document.getElementById('app').innerHTML = '404 Not Found';
     }
     ;
+};
+const activeTab = (tab) => {
+    console.log(tab.id);
+    if (window.location.hash.split('#')[1] === tab.id) {
+        console.log('active');
+        if (!tab.hasAttribute('active')) {
+            tab.setAttribute('active', '');
+            console.log(tab.attributes);
+        }
+    }
+    else if (tab.hasAttribute('active')) {
+        tab.removeAttribute('active');
+        console.log('inactive');
+        console.log(tab.attributes);
+    }
 };
 const app = () => {
     showView(window.location.hash);
