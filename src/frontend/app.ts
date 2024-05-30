@@ -54,7 +54,7 @@ const actionsView = (subhash: string): void => {
             // prepend active indicator bar and append form fields
             actionFormInner = `
                 <div class="action-indicator-bar">
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                     <div></div>
                     <div></div>
                 </div>
@@ -89,7 +89,7 @@ const actionsView = (subhash: string): void => {
             actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                     <div></div>
                 </div>
             ` + actionFormInner + `
@@ -138,7 +138,7 @@ const actionsView = (subhash: string): void => {
                 <div class="action-indicator-bar">
                     <div></div>
                     <div></div>
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
@@ -197,6 +197,23 @@ const supportView = (): void => {
     support.classList.add('view');
     document.getElementById('app')!.appendChild(support);
 };
+// Set active indicator bar based on hash
+const setIndicator = (hash: string, id: string): void => {
+    // get the appropriate indicator element
+    var indicator: HTMLDivElement = document.getElementById(id) as HTMLDivElement;
+    // get id of active view indicator
+    var active: string = hash.substring(1).concat('-indicator');
+    // if the indicator is already active, remove it if the id doesn't match
+    if (indicator.classList.contains('view-indicator')) {
+        if(id !== active) {
+            indicator.classList.remove('view-indicator');
+        }
+    }
+    // if the indicator is not active, add it if the id matches
+    else if (id === active) {
+        indicator.classList.add('view-indicator');
+    }
+}
 // Call for views based on requested path
 const showView = (hash: string): void => {
     // clear parent element
@@ -218,24 +235,10 @@ const showView = (hash: string): void => {
         default:
             document.getElementById('app')!.innerHTML = '404 Not Found';
     };
-};
-// Event Listener Functions
-const activeTab = (tab: HTMLElement): void => {
-    console.log(tab.id)
-    // Add active attribute to active tab which doesn't have it
-    if(window.location.hash.split('#')[1] === tab.id) {
-        console.log('active')
-        if(!tab.hasAttribute('active')) {
-            tab.setAttribute('active', '');
-            console.log(tab.attributes)
-        }
-    }
-    // Remove active attribute from non-active tab that has it
-    else if(tab.hasAttribute('active')) {
-        tab.removeAttribute('active');
-        console.log('inactive')
-        console.log(tab.attributes)
-    }
+    // set view indicator bar based on hash
+    setIndicator(hash, 'account-indicator');
+    setIndicator(hash, 'actions-indicator');
+    setIndicator(hash, 'support-indicator');
 };
 // Main
 const app = (): void => {

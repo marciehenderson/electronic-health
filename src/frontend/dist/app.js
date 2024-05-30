@@ -48,7 +48,7 @@ const actionsView = (subhash) => {
         case 'create':
             actionFormInner = `
                 <div class="action-indicator-bar">
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                     <div></div>
                     <div></div>
                 </div>
@@ -82,7 +82,7 @@ const actionsView = (subhash) => {
             actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                     <div></div>
                 </div>
             ` + actionFormInner + `
@@ -123,7 +123,7 @@ const actionsView = (subhash) => {
                 <div class="action-indicator-bar">
                     <div></div>
                     <div></div>
-                    <div class="active-indicator"></div>
+                    <div class="action-indicator"></div>
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
@@ -176,6 +176,18 @@ const supportView = () => {
     support.classList.add('view');
     document.getElementById('app').appendChild(support);
 };
+const setIndicator = (hash, id) => {
+    var indicator = document.getElementById(id);
+    var active = hash.substring(1).concat('-indicator');
+    if (indicator.classList.contains('view-indicator')) {
+        if (id !== active) {
+            indicator.classList.remove('view-indicator');
+        }
+    }
+    else if (id === active) {
+        indicator.classList.add('view-indicator');
+    }
+};
 const showView = (hash) => {
     document.getElementById('app').innerHTML = '';
     var subhash = hash.split('+')[1];
@@ -194,21 +206,9 @@ const showView = (hash) => {
             document.getElementById('app').innerHTML = '404 Not Found';
     }
     ;
-};
-const activeTab = (tab) => {
-    console.log(tab.id);
-    if (window.location.hash.split('#')[1] === tab.id) {
-        console.log('active');
-        if (!tab.hasAttribute('active')) {
-            tab.setAttribute('active', '');
-            console.log(tab.attributes);
-        }
-    }
-    else if (tab.hasAttribute('active')) {
-        tab.removeAttribute('active');
-        console.log('inactive');
-        console.log(tab.attributes);
-    }
+    setIndicator(hash, 'account-indicator');
+    setIndicator(hash, 'actions-indicator');
+    setIndicator(hash, 'support-indicator');
 };
 const app = () => {
     showView(window.location.hash);

@@ -2,9 +2,9 @@
 :root {
     --md-sys-color-primary: #6750a4;
     --md-sys-color-on-primary: #fef7ff;
-    /* --md-primary-tab-active-indicator-color: #fef7ff;
+    --md-primary-tab-active-indicator-color: #fef7ff;
     --md-primary-tab-active-label-text-color: #1d1b20;
-    --md-primary-tab-hover-label-text-color: #6750a4; */
+    --md-primary-tab-hover-label-text-color: #6750a4;
     --md-secondary-tab-container-color: #9780d4;
     --md-secondary-tab-label-text-color: #fef7ff;
     --md-secondary-tab-active-label-text-color: #fef7ff;
@@ -20,6 +20,7 @@
     --md-outlined-select-text-field-outline-color: #fef7ff;
     --md-outlined-select-text-field-focus-outline-color: #000000;
     --md-focus-ring-color: #fef7ff;
+    --md-divider-color: #9780d4;
 } 
 /* document-wide style */
 body {
@@ -113,24 +114,33 @@ body {
     margin-top: 0;
     margin-bottom: 0;
 }
-/* subtab active tab indicator container style */
-.action-indicator-bar {
+/* subtab and tab active tab indicator container style */
+.action-indicator-bar, .view-indicator-bar {
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
     height: 0.25em;
 }
-/* subtab active tab indicator tab style */
-.action-indicator-bar div {
+/* subtab and tab active tab indicator tab style */
+.action-indicator-bar div, .view-indicator-bar div {
     flex-grow: 1;
     flex-shrink: 0;
     width: auto;
     height: 100%;
+}
+.action-indicator-bar div {
     border-bottom-left-radius: 0.125em;
     border-bottom-right-radius: 0.125em;
 }
+.view-indicator-bar div {
+    border-top-left-radius: 0.125em;
+    border-top-right-radius: 0.125em;
+}
 /* subtab active tab indicator style */
-.active-indicator {
+.action-indicator {
+    background-color: var(--md-secondary-tab-container-color);
+}
+.view-indicator {
     background-color: var(--md-sys-color-on-primary);
 }
