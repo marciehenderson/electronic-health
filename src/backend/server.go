@@ -1,13 +1,40 @@
 package main
 
+// Import necessary packages
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"unicode"
+
+	"github.com/go-sql-driver/mysql"
 )
 
+// Declare global variables
+var dbConfig = mysql.Config{
+	User:                 os.Getenv("DBUSER"),
+	Passwd:               os.Getenv("DBPASS"),
+	Net:                  "tcp",
+	Addr:                 "localhost:3306",
+	DBName:               "ehealth",
+	AllowNativePasswords: true,
+}
+
+// Declare custom types
+type dbData struct {
+	query  string        // create, modify, view
+	table  string        // patient, location, record, etc.
+	column string        // patient_id, location_id, record_date, etc.
+	colRef string        // required for view
+	rowRef []interface{} // only required for view and modify, can be multiple primary keys
+	data   interface{}   // only required for create and modify, can be any acceptable data type
+}
+
+// Main function of the server
 func main() {
+	// Configure and start the server
 	http.HandleFunc("/", appHandler)
 	fs := http.FileServer(http.Dir("../frontend/"))
 	http.Handle("/..frontend/", http.StripPrefix("/..frontend/", fs))
@@ -15,6 +42,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+// Handle all requests to the server
 func appHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -41,6 +69,8 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			var password = inputValidation(r.Form.Get("password"), "login")
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
+			// Query database for user credentials
+			fmt.Println(dbHandler(dbData{query: "view", table: "user", column: "password_hash", colRef: "user_hash", rowRef: []interface{}{username}}))
 			// reload account page
 			w.Header().Set("Content-Type", "text/html")
 			http.ServeFile(w, r, "../frontend/index.html")
@@ -71,8 +101,57 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handle all database queries
+func dbHandler(data dbData) interface{} {
+	// Connect to database
+	db, err := sql.Open("mysql", dbConfig.FormatDSN())
+	// Log any errors
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+	pingErr := db.Ping()
+	if db.Ping() != nil {
+		log.Fatal(pingErr)
+		return false
+	}
+	// Connection successful
+	fmt.Println("Connected to database")
+	// Query database
+	switch data.query {
+	case "create":
+		// Create a new entry in the requested table
+		_, err := db.Exec("INSERT INTO "+data.table+" ("+data.column+") VALUES (?)", data.data)
+		if err != nil {
+			log.Fatal(err)
+			return false
+		}
+	case "modify":
+		// Modify an existing entry in the requested table
+		_, err := db.Exec("UPDATE "+data.table+" SET "+data.column+" = ? WHERE "+data.column+" = ?", data.data, data.rowRef)
+		if err != nil {
+			log.Fatal(err)
+			return false
+		}
+	case "view":
+		// View an existing entry in the requested table
+		rows, err := db.Query("SELECT "+data.column+" FROM "+data.table+" WHERE "+data.colRef+" = ?", data.rowRef[0].(string))
+		if err != nil {
+			log.Fatal(err)
+			return false
+		}
+		// Return results
+		return rows
+	default:
+		fmt.Println("Invalid query type")
+		return false
+	}
+	// Return results
+	return true
+}
+
+// Validate input string based on category
 func inputValidation(input string, category string) string {
-	// Validate input based on category
 	var validatedInput string
 	switch category {
 	case "login":
