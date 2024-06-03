@@ -70,7 +70,11 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
 			// Query database for user credentials
-			fmt.Println(dbHandler(dbData{query: "view", table: "user", column: "password_hash", colRef: "user_hash", rowRef: []interface{}{username}}))
+			if dbHandler(dbData{query: "view", table: "user", column: "password_hash", colRef: "user_hash", rowRef: []interface{}{username}}) == password {
+				fmt.Println("Login successful")
+			} else {
+				fmt.Println("Login failed")
+			}
 			// reload account page
 			w.Header().Set("Content-Type", "text/html")
 			http.ServeFile(w, r, "../frontend/index.html")
@@ -135,13 +139,15 @@ func dbHandler(data dbData) interface{} {
 		}
 	case "view":
 		// View an existing entry in the requested table
-		rows, err := db.Query("SELECT "+data.column+" FROM "+data.table+" WHERE "+data.colRef+" = ?", data.rowRef[0].(string))
-		if err != nil {
+		var output string
+		err := db.QueryRow("SELECT "+data.column+" FROM "+data.table+" WHERE "+data.colRef+" = ?", data.rowRef[0].(string)).Scan(&output)
+		if err != nil && err != sql.ErrNoRows {
 			log.Fatal(err)
 			return false
 		}
 		// Return results
-		return rows
+		fmt.Print("Output: ")
+		return output
 	default:
 		fmt.Println("Invalid query type")
 		return false

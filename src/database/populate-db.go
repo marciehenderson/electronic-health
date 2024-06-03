@@ -48,6 +48,12 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	// Insert test user
+	_, err = db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", "admin", "test", "test", json.Number("1"))
+	// Log any errors
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Patient Table
 	for i := 0; i < 100; i++ {
 		// Generate a random patient for the table
