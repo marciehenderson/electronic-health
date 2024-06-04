@@ -24,12 +24,12 @@ var dbConfig = mysql.Config{
 
 // Declare custom types
 type dbData struct {
-	query  string        // create, modify, view
-	table  string        // patient, location, record, etc.
-	column string        // patient_id, location_id, record_date, etc.
-	colRef string        // required for view
-	rowRef []interface{} // only required for view and modify, can be multiple primary keys
-	data   interface{}   // only required for create and modify, can be any acceptable data type
+	query string        // create, modify, view
+	table string        // patient, location, record, etc.
+	cols  []string      // patient_id, location_id, record_date, etc.
+	keys  []string      // only required for view and modify, the primary keys to check against
+	refs  []interface{} // only required for view and modify, the reference values to compare with primary keys
+	data  []interface{} // only required for create and modify, can be any acceptable data type
 }
 
 // Main function of the server
@@ -70,7 +70,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
 			// Query database for user credentials
-			if dbHandler(dbData{query: "view", table: "user", column: "password_hash", colRef: "user_hash", rowRef: []interface{}{username}}) == password {
+			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == password {
 				fmt.Println("Login successful")
 			} else {
 				fmt.Println("Login failed")
@@ -96,6 +96,15 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Record Type: " + recordType)
 			fmt.Println("Edit Value: " + editValue)
 			fmt.Println("Notes: " + notes)
+			// Query database based on action sub-hash
+			switch subHash {
+			case "/#actions+create":
+				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, locationID, recordType, notes}})
+			case "/#actions+modify":
+				dbHandler(dbData{query: "modify", table: "record", cols: []string{editValue}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{"placeholder_repacement_value"}})
+			case "/#actions+view":
+				dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "practitioner_id", "location_id", "notes", "code_cpt", "code_icd"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
+			}
 			// reload action page
 			w.Header().Set("Content-Type", "text/html")
 			http.Redirect(w, r, subHash, http.StatusSeeOther)
@@ -121,28 +130,68 @@ func dbHandler(data dbData) interface{} {
 	}
 	// Connection successful
 	fmt.Println("Connected to database")
+	// Generate selection query based on data
+	var selector string = ""
+	var values string = " VALUES ("
+	var inputs string = "), "
+	for i := 0; i < len(data.cols); i++ {
+		// set selector, values, and inputs strings for each column in query
+		selector += data.cols[i]
+		values += "?"
+		if data.data != nil {
+			inputs += data.data[i].(string)
+		}
+		// add commas between values, but not at the end
+		if i < len(data.cols)-1 {
+			selector += ", "
+			values += ", "
+			inputs += ", "
+		}
+	}
+	inputs += ")"
+	var comparator string = " WHERE "
+	if data.keys != nil {
+		for i := 0; i < len(data.keys); i++ {
+			// set comparator string for each key in query
+			comparator += data.keys[i] + " = '" + data.refs[i].(string) + "'"
+			// add AND between keys, but not at the end
+			if i < len(data.keys)-1 {
+				comparator += " AND "
+			}
+		}
+	}
+	// Query selection successful
+	fmt.Println("Query selection successful")
 	// Query database
 	switch data.query {
 	case "create":
+		// Generate insert query
+		var insert string = "INSERT INTO " + data.table + " (" + selector + ") " + values + inputs
 		// Create a new entry in the requested table
-		_, err := db.Exec("INSERT INTO "+data.table+" ("+data.column+") VALUES (?)", data.data)
+		_, err := db.Exec(insert)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			fmt.Println(insert)
 			return false
 		}
 	case "modify":
+		// Generate update query
+		var update string = "UPDATE " + data.table + " SET " + " (" + selector + ") " + values + inputs + comparator
 		// Modify an existing entry in the requested table
-		_, err := db.Exec("UPDATE "+data.table+" SET "+data.column+" = ? WHERE "+data.column+" = ?", data.data, data.rowRef)
-		if err != nil {
-			log.Fatal(err)
+		_, err := db.Exec(update)
+		if err != nil && err != sql.ErrNoRows {
+			fmt.Println(err)
+			fmt.Println(update)
 			return false
 		}
 	case "view":
 		// View an existing entry in the requested table
 		var output string
-		err := db.QueryRow("SELECT "+data.column+" FROM "+data.table+" WHERE "+data.colRef+" = ?", data.rowRef[0].(string)).Scan(&output)
+		var view string = "SELECT " + selector + " FROM " + data.table + comparator
+		err := db.QueryRow(view).Scan(&output)
 		if err != nil && err != sql.ErrNoRows {
-			log.Fatal(err)
+			fmt.Println(err)
+			fmt.Println(view)
 			return false
 		}
 		// Return results
