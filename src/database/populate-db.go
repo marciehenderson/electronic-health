@@ -11,6 +11,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+// Declare global variables
 var db *sql.DB
 
 func main() {
@@ -37,6 +38,17 @@ func main() {
 	}
 	// Log success
 	fmt.Println("Connected to database")
+
+	// Test name generation
+	for i := 0; i < 10; i++ {
+		name := randomName(3)
+		fmt.Println(name[0], name[1])
+		// save to log file
+		err := os.WriteFile("log.txt", []byte(fmt.Sprintln(name[0], name[1])), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// Populate the database tables
 	// User Table
@@ -101,18 +113,67 @@ func main() {
 	}
 }
 
+func likelihood(dictionary []string, seed []string) []float32 {
+	var weight []float32
+	size := len(dictionary[0])
+	for i := 0; i < len(dictionary); i++ {
+		// check if all words in the dictionary are the same size
+		if len(dictionary[i]) != size {
+			return nil
+		}
+		var count int
+		for j := 0; j < len(seed); j++ {
+			for k := 0; k < len(seed[j])-size; k++ {
+				// get a window of the seed from the current position
+				window := seed[j][k : k+size]
+				// check if the window matches the current word in the dictionary
+				if window == dictionary[i] {
+					count++
+				}
+			}
+		}
+		// calculate weight of the word based on its frequency in the seed
+		weight = append(weight, float32(count)/float32(len(seed)))
+	}
+	return weight
+}
+
 // generates a random word with the requested number of syllables
 // notably the word is not likely to be a real word, but should
 // be useful for testing purposes.
 func randomWord(syllables int) string {
 	var word string
 	dictionary := []string{"ba", "be", "bi", "bo", "bu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ha", "he", "hi", "ho", "hu", "ja", "je", "ji", "jo", "ju", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "ya", "ye", "yi", "yo", "yu", "za", "ze", "zi", "zo", "zu"}
+	seed := []string{"alice", "bob", "charlie", "david", "eve", "frank", "grace", "heidi", "ivan", "judy", "kevin", "linda", "mallory", "nancy", "oscar", "peggy", "romeo", "sybil", "trudy", "victor", "walter", "xavier", "yvonne", "zelda"}
+	weight := likelihood(dictionary, seed)
+	// shuffle the dictionary and weight slices
+	for i := range dictionary {
+		j := rand.Intn(i + 1)
+		dictionary[i], dictionary[j] = dictionary[j], dictionary[i]
+		weight[i], weight[j] = weight[j], weight[i]
+	}
 	// make a random word with the requested number of syllables
 	for i := 0; i < syllables; i++ {
-		// concatenate a random syllable to the word
-		word += dictionary[rand.Intn(len(dictionary))]
+		for j := 0; j < len(dictionary); j++ {
+			if rand.Float32() < weight[j] {
+				// concatenate a random syllable to the word
+				word += dictionary[j]
+				break
+			}
+		}
 	}
+	// print the random word to the console
+	fmt.Println(word)
 	return word
+}
+
+func randomName(max int) [2]string {
+	var name [2]string
+	// generate a random first name with a random number of syllables
+	name[0] = randomWord(rand.Intn(max) + 1)
+	// generate a random last name with a random number of syllables
+	name[1] = randomWord(rand.Intn(max) + 1)
+	return name
 }
 
 func randomCategory() string {
