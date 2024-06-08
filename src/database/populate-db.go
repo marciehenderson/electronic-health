@@ -8,12 +8,15 @@ import (
 	"math/rand"
 	"os"
 
+	"database/populate-db/util"
+
 	"github.com/go-sql-driver/mysql"
 )
 
 // Declare global variables
 var db *sql.DB
 var defaultSeed = []string{"apple", "bingo", "calendar", "dance", "evening", "flower", "goodbye", "hello", "ice", "jungle", "kite", "laptop", "mango", "notebook", "orange", "pencil", "queen", "rabbit", "sunset", "table", "umbrella", "violet", "water", "xylophone", "yellow", "zebra"}
+var test = true // toggle test mode manually
 
 func main() {
 	// Get and set configuration values
@@ -40,81 +43,113 @@ func main() {
 	// Log success
 	fmt.Println("Connected to database")
 
+	/**Testing***********************************************************************************************************************************************************************************************************/
 	// Test name generation
-	f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	for i := 0; i < 100; i++ {
-		name := randomName(3)
-		fmt.Println(name[0], name[1])
-		// save to log file
-		_, err := f.WriteString(fmt.Sprintf("%s %s\n", name[0], name[1]))
+	if test {
+		f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer f.Close()
+		for i := 0; i < 100; i++ {
+			name := randomName(3)
+			// fmt.Println(name[0], name[1])
+			// save to log file
+			_, err := f.WriteString(fmt.Sprintf("%s %s\n", name[0], name[1]))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		// Test util functions and types
+		tree := util.GenerateWeightedTree(seedFromFile("name-seed.txt"))
+		f, err = os.OpenFile("tree.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		// Write the tree to a log file
+		// Iterate over the dictionary and write each window and its weight to the file
+		for i := 0; i < len(tree.Dictionary); i++ {
+			_, err := f.WriteString(fmt.Sprintf("%s: %f\t[", tree.Dictionary[i].Window, tree.Weight[i]))
+			if err != nil {
+				log.Fatal(err)
+			}
+			// Iterate over the children of the current window and write each child and its weight to the file
+			for j := 0; j < len(tree.Dictionary[i].Child); j++ {
+				_, err := f.WriteString(fmt.Sprintf(" %s: %f,", *tree.Dictionary[i].Child[j].Window, tree.Dictionary[i].Child[j].Weight))
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			_, err = f.WriteString(" ]\n")
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
+	/**Testing*End*******************************************************************************************************************************************************************************************************/
 
 	// Populate the database tables
 	// User Table
-	for i := 0; i < 100; i++ {
-		// Generate a random user for the table
-		_, err := db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", randomCategory(), randomWord(10, defaultSeed), randomWord(10, defaultSeed), json.Number("0"))
+	if !test {
+		for i := 0; i < 100; i++ {
+			// Generate a random user for the table
+			_, err := db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", randomCategory(), randomWord(10, defaultSeed), randomWord(10, defaultSeed), json.Number("0"))
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		// Insert test user
+		_, err = db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", "admin", "test", "test", json.Number("1"))
 		// Log any errors
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-	// Insert test user
-	_, err = db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", "admin", "test", "test", json.Number("1"))
-	// Log any errors
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Patient Table
-	for i := 0; i < 100; i++ {
-		// Generate a random patient for the table
-		_, err := db.Exec("INSERT INTO patient (first_name, last_name, date_of_birth, street_address, contact_number, email) VALUES (?, ?, ?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(1, defaultSeed), randomDate(), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
-		// Log any errors
-		if err != nil {
-			log.Fatal(err)
+		// Patient Table
+		for i := 0; i < 100; i++ {
+			// Generate a random patient for the table
+			_, err := db.Exec("INSERT INTO patient (first_name, last_name, date_of_birth, street_address, contact_number, email) VALUES (?, ?, ?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(1, defaultSeed), randomDate(), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
-	// Practitioner Table
-	for i := 0; i < 100; i++ {
-		// Generate a random practitioner for the table
-		_, err := db.Exec("INSERT INTO practitioner (first_name, last_name, date_of_birth, street_address, contact_number, email) VALUES (?, ?, ?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(1, defaultSeed), randomDate(), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
-		// Log any errors
-		if err != nil {
-			log.Fatal(err)
+		// Practitioner Table
+		for i := 0; i < 100; i++ {
+			// Generate a random practitioner for the table
+			_, err := db.Exec("INSERT INTO practitioner (first_name, last_name, date_of_birth, street_address, contact_number, email) VALUES (?, ?, ?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(1, defaultSeed), randomDate(), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
-	// Location Table
-	for i := 0; i < 100; i++ {
-		// Generate a random location for the table
-		_, err := db.Exec("INSERT INTO location (location_name, street_address, contact_number, email) VALUES (?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
-		// Log any errors
-		if err != nil {
-			log.Fatal(err)
+		// Location Table
+		for i := 0; i < 100; i++ {
+			// Generate a random location for the table
+			_, err := db.Exec("INSERT INTO location (location_name, street_address, contact_number, email) VALUES (?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
-	// Record Table
-	for i := 0; i < 100; i++ {
-		// Generate a random record for the table
-		_, err := db.Exec("INSERT INTO record (patient_id, record_date, practitioner_id, location_id, notes, code_cpt, code_icd) VALUES (?, ?, ?, ?, ?, ?, ?)", rand.Intn(100)+1, randomDate(), rand.Intn(100)+1, rand.Intn(100)+1, randomWord(10, defaultSeed), randomWord(5, defaultSeed), randomWord(5, defaultSeed))
-		// Log any errors
-		if err != nil {
-			log.Fatal(err)
+		// Record Table
+		for i := 0; i < 100; i++ {
+			// Generate a random record for the table
+			_, err := db.Exec("INSERT INTO record (patient_id, record_date, practitioner_id, location_id, notes, code_cpt, code_icd) VALUES (?, ?, ?, ?, ?, ?, ?)", rand.Intn(100)+1, randomDate(), rand.Intn(100)+1, rand.Intn(100)+1, randomWord(10, defaultSeed), randomWord(5, defaultSeed), randomWord(5, defaultSeed))
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
-	// Client Table
-	for i := 0; i < 100; i++ {
-		// Generate a random client for the table
-		_, err := db.Exec("INSERT INTO client (patient_id, practitioner_id, client_status, visits) VALUES (?, ?, ?, ?)", rand.Intn(100)+1, rand.Intn(100)+1, "active", rand.Intn(1000))
-		// Log any errors
-		if err != nil {
-			log.Fatal(err)
+		// Client Table
+		for i := 0; i < 100; i++ {
+			// Generate a random client for the table
+			_, err := db.Exec("INSERT INTO client (patient_id, practitioner_id, client_status, visits) VALUES (?, ?, ?, ?)", rand.Intn(100)+1, rand.Intn(100)+1, "active", rand.Intn(1000))
+			// Log any errors
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
@@ -185,15 +220,15 @@ func seedFromFile(path string) []string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// read the file into a byte slice
-	data := make([]byte, 100)
+	// close the file when the function returns
+	defer f.Close()
+	// read the file into a byte slice with a maximum size of 3.84 MB
+	data := make([]byte, 3840000)
 	count, err := f.Read(data)
 	// log any errors
 	if err != nil {
 		log.Fatal(err)
 	}
-	// close the file
-	f.Close()
 	// convert data to []string with EOL as delimiter
 	raw := string(data[:count])
 	var seed []string
@@ -223,7 +258,7 @@ func randomWord(syllables int, seed []string) string {
 		word += selectWindow(dictionary, weight)
 	}
 	// print the random word to the console
-	fmt.Println(word)
+	//fmt.Println(word)
 	return word
 }
 
