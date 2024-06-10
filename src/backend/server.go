@@ -133,18 +133,23 @@ func dbHandler(data dbData) interface{} {
 	// Generate selection query based on data
 	var selector string = ""
 	var values string = " VALUES ("
-	var inputs string = "), "
+	var inputs string = ""
 	for i := 0; i < len(data.cols); i++ {
 		// set selector, values, and inputs strings for each column in query
 		selector += data.cols[i]
-		values += "?"
+		// values += "?"
 		if data.data != nil {
-			inputs += data.data[i].(string)
+			// add quotes around string values
+			if _, ok := data.data[i].(string); ok {
+				inputs += "'" + data.data[i].(string) + "'"
+			} else {
+				inputs += data.data[i].(string)
+			}
 		}
 		// add commas between values, but not at the end
 		if i < len(data.cols)-1 {
 			selector += ", "
-			values += ", "
+			// values += ", "
 			inputs += ", "
 		}
 	}

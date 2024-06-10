@@ -60,17 +60,18 @@ CREATE TABLE IF NOT EXISTS location (
 -- Record table
 CREATE TABLE IF NOT EXISTS record (
     patient_id INT,
-    record_date DATE,
-    practitioner_id INT NOT NULL,
-    location_id INT NOT NULL,
-    notes TEXT NOT NULL,
-    code_cpt VARCHAR(10) NOT NULL,
-    code_icd VARCHAR(10) NOT NULL,
+    record_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    practitioner_id INT,
+    location_id INT,
+    record_type ENUM('check-up', 'annual', 'blood-work', 'vaccination', 'emergency'),
+    notes TEXT,
+    code_cpt VARCHAR(10),
+    code_icd VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (patient_id, record_date),
-    FOREIGN KEY (patient_id) REFERENCES patient(id),
-    FOREIGN KEY (practitioner_id) REFERENCES practitioner(id),
-    FOREIGN KEY (location_id) REFERENCES location(id)
+    PRIMARY KEY (patient_id, record_date)
+    -- FOREIGN KEY (patient_id) REFERENCES patient(id),
+    -- FOREIGN KEY (practitioner_id) REFERENCES practitioner(id),
+    -- FOREIGN KEY (location_id) REFERENCES location(id)
 );
 
 -- Client table
