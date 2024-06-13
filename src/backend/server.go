@@ -65,13 +65,16 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Parse login form data
 			r.ParseForm()
 			// Validate user credentials
-			var username = inputValidation(r.Form.Get("username"), "login")
-			var password = inputValidation(r.Form.Get("password"), "login")
+			username := inputValidation(r.Form.Get("username"), "login")
+			password := inputValidation(r.Form.Get("password"), "login")
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
 			// Query database for user credentials
-			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == password {
+			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "["+password+"]," {
 				fmt.Println("Login successful")
+				value := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: []string{""}, refs: []interface{}{""}})
+				cookie := http.Cookie{Name: "user_data", Value: value.(string), Path: "/"}
+				http.SetCookie(w, &cookie)
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -82,13 +85,13 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/action" {
 			// Parse action form data
 			r.ParseForm()
-			var subHash = "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "login")
-			var patientID = inputValidation(r.Form.Get("patient_id"), "login")
-			var locationID = inputValidation(r.Form.Get("location_id"), "login")
-			var recordDate = inputValidation(r.Form.Get("record_date"), "login")
-			var recordType = inputValidation(r.Form.Get("record_type"), "login")
-			var editValue = inputValidation(r.Form.Get("edit_value"), "login")
-			var notes = inputValidation(r.Form.Get("notes"), "login")
+			subHash := "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "login")
+			patientID := inputValidation(r.Form.Get("patient_id"), "login")
+			locationID := inputValidation(r.Form.Get("location_id"), "login")
+			recordDate := inputValidation(r.Form.Get("record_date"), "login")
+			recordType := inputValidation(r.Form.Get("record_type"), "login")
+			editValue := inputValidation(r.Form.Get("edit_value"), "login")
+			notes := inputValidation(r.Form.Get("notes"), "login")
 			fmt.Println("Sub Hash: " + subHash)
 			fmt.Println("Patient ID: " + patientID)
 			fmt.Println("Location ID: " + locationID)
@@ -137,7 +140,6 @@ func dbHandler(data dbData) interface{} {
 	for i := 0; i < len(data.cols); i++ {
 		// set selector, values, and inputs strings for each column in query
 		selector += data.cols[i]
-		// values += "?"
 		if data.data != nil {
 			// add quotes around string values
 			if _, ok := data.data[i].(string); ok {
@@ -149,7 +151,6 @@ func dbHandler(data dbData) interface{} {
 		// add commas between values, but not at the end
 		if i < len(data.cols)-1 {
 			selector += ", "
-			// values += ", "
 			inputs += ", "
 		}
 	}
@@ -191,16 +192,44 @@ func dbHandler(data dbData) interface{} {
 		}
 	case "view":
 		// View an existing entry in the requested table
-		var output string
-		var view string = "SELECT " + selector + " FROM " + data.table + comparator
-		err := db.QueryRow(view).Scan(&output)
+		output := ""
+		colstr := make([]interface{}, len(data.cols))
+		rowstr := "["
+		// Generate basic select query
+		view := "SELECT " + selector + " FROM " + data.table
+		// Add a WHERE clause if keys and refs are provided
+		if data.keys[0] != "" {
+			view += comparator
+		}
+		// Query the database for all relevant rows
+		rows, err := db.Query(view)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
-			fmt.Println(view)
 			return false
 		}
+		// Iterate through all rows and append to output
+		for rows.Next() {
+			for i := 0; i < len(data.cols); i++ {
+				colstr[i] = new(string)
+			}
+			// get value of each column
+			err := rows.Scan(colstr...)
+			if err != nil {
+				fmt.Println(err)
+				return false
+			}
+			fmt.Println("Scanned Row...")
+			for i := 0; i < len(colstr); i++ {
+				rowstr += *colstr[i].(*string)
+				if i < len(data.cols)-1 {
+					rowstr += " "
+				}
+			}
+			rowstr += "]"
+			output += rowstr + ","
+		}
+		fmt.Println(output)
 		// Return results
-		fmt.Print("Output: ")
 		return output
 	default:
 		fmt.Println("Invalid query type")

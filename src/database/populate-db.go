@@ -16,7 +16,7 @@ import (
 // Declare global variables
 var db *sql.DB
 var defaultSeed = []string{"apple", "bingo", "calendar", "dance", "evening", "flower", "goodbye", "hello", "ice", "jungle", "kite", "laptop", "mango", "notebook", "orange", "pencil", "queen", "rabbit", "sunset", "table", "umbrella", "violet", "water", "xylophone", "yellow", "zebra"}
-var test = true // toggle test mode manually
+var test = false // toggle test mode manually
 
 func main() {
 	// Get and set configuration values
