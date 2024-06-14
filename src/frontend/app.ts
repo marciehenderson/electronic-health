@@ -30,6 +30,10 @@ const accountView = (): void => {
 };
 // Actions View - Create, Modify, View Records
 const actionsView = (subhash: string): void => {
+    // Set dropdown options based on database records
+    const record = generateOptions('record_date','user_data');
+    const location = generateOptions('location_id','user_data');
+    const patient = generateOptions('patient_id','user_data');
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -95,21 +99,15 @@ const actionsView = (subhash: string): void => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" type="text" required>
-                    <md-select-option value="1">
-                        <div slot="headline">01/01/2021</div>
+            `;
+            record.forEach((date: string) => {
+                actionFormInner += `
+                    <md-select-option value="${date}">
+                        <div slot="headline">${date}</div>
                     </md-select-option>
-                    <md-select-option value="2">
-                        <div slot="headline">01/02/2021</div>
-                    </md-select-option>
-                    <md-select-option value="3">
-                        <div slot="headline">01/03/2021</div>
-                    </md-select-option>
-                    <md-select-option value="4">
-                        <div slot="headline">01/04/2021</div>
-                    </md-select-option>
-                    <md-select-option value="5">
-                        <div slot="headline">01/05/2021</div>
-                    </md-select-option>
+                `;
+            });
+            actionFormInner += `
                 </md-outlined-select>
                 <md-outlined-select name="edit_value" label="Edit Value" type="text" required>
                     <md-select-option value="1">
@@ -124,13 +122,6 @@ const actionsView = (subhash: string): void => {
                 </md-outlined-select>
                 <div id="form-generated-container"></div>
             `;
-            // note dates are hardcoded for example, should 
-            // be generated from existing database records.
-            // the date and edit value should be unselectable
-            // until a patient ID is entered.
-            // the form-generated-container will be populated
-            // with the appropriate form fields based on the
-            // selected edit value.
             break;
         case 'view':
             // prepend active indicator bar and append form fields
@@ -213,6 +204,22 @@ const setIndicator = (hash: string, id: string): void => {
     else if (id === active) {
         indicator.classList.add('view-indicator');
     }
+}
+// Generate dropdown options based on database records
+const generateOptions = (column: string, cookie: string): string[] => {
+    // fetch options from database
+    const cookies = `;  ${document.cookie};`;
+    // get all data from specified cookie
+    const dIndex = cookies.indexOf(`;  ${cookie}=`) + 1;
+    // store each row of data as an element in an array
+    const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
+    // get all instances of the specified column
+    let options: string[] = [];
+    data.forEach((row: string) => {
+        const cIndex = row.indexOf(`,${column}=`) + 1;
+        options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
+    });
+    return options;
 }
 // Call for views based on requested path
 const showView = (hash: string): void => {

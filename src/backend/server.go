@@ -70,10 +70,10 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Username: " + username)
 			fmt.Println("Password: " + password)
 			// Query database for user credentials
-			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "["+password+"]," {
+			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "[password_hash="+password+",]," {
 				fmt.Println("Login successful")
 				value := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: []string{""}, refs: []interface{}{""}})
-				cookie := http.Cookie{Name: "user_data", Value: value.(string), Path: "/"}
+				cookie := http.Cookie{Name: "user_data", Value: value.(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
 				http.SetCookie(w, &cookie)
 			} else {
 				fmt.Println("Login failed")
@@ -194,7 +194,6 @@ func dbHandler(data dbData) interface{} {
 		// View an existing entry in the requested table
 		output := ""
 		colstr := make([]interface{}, len(data.cols))
-		rowstr := "["
 		// Generate basic select query
 		view := "SELECT " + selector + " FROM " + data.table
 		// Add a WHERE clause if keys and refs are provided
@@ -208,7 +207,9 @@ func dbHandler(data dbData) interface{} {
 			return false
 		}
 		// Iterate through all rows and append to output
+		// Output format: [col1=val1,col2=val2,...],[col1=val1,col2=val2,...],...
 		for rows.Next() {
+			rowstr := "["
 			for i := 0; i < len(data.cols); i++ {
 				colstr[i] = new(string)
 			}
@@ -220,10 +221,7 @@ func dbHandler(data dbData) interface{} {
 			}
 			fmt.Println("Scanned Row...")
 			for i := 0; i < len(colstr); i++ {
-				rowstr += *colstr[i].(*string)
-				if i < len(data.cols)-1 {
-					rowstr += " "
-				}
+				rowstr += data.cols[i] + "=" + *colstr[i].(*string) + ","
 			}
 			rowstr += "]"
 			output += rowstr + ","

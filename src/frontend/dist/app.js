@@ -25,6 +25,9 @@ const accountView = () => {
     document.getElementById('app').appendChild(account);
 };
 const actionsView = (subhash) => {
+    const record = generateOptions('record_date', 'user_data');
+    const location = generateOptions('location_id', 'user_data');
+    const patient = generateOptions('patient_id', 'user_data');
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -88,21 +91,15 @@ const actionsView = (subhash) => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" type="text" required>
-                    <md-select-option value="1">
-                        <div slot="headline">01/01/2021</div>
+            `;
+            record.forEach((date) => {
+                actionFormInner += `
+                    <md-select-option value="${date}">
+                        <div slot="headline">${date}</div>
                     </md-select-option>
-                    <md-select-option value="2">
-                        <div slot="headline">01/02/2021</div>
-                    </md-select-option>
-                    <md-select-option value="3">
-                        <div slot="headline">01/03/2021</div>
-                    </md-select-option>
-                    <md-select-option value="4">
-                        <div slot="headline">01/04/2021</div>
-                    </md-select-option>
-                    <md-select-option value="5">
-                        <div slot="headline">01/05/2021</div>
-                    </md-select-option>
+                `;
+            });
+            actionFormInner += `
                 </md-outlined-select>
                 <md-outlined-select name="edit_value" label="Edit Value" type="text" required>
                     <md-select-option value="1">
@@ -187,6 +184,17 @@ const setIndicator = (hash, id) => {
     else if (id === active) {
         indicator.classList.add('view-indicator');
     }
+};
+const generateOptions = (column, cookie) => {
+    const cookies = `;  ${document.cookie};`;
+    const dIndex = cookies.indexOf(`;  ${cookie}=`) + 1;
+    const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
+    let options = [];
+    data.forEach((row) => {
+        const cIndex = row.indexOf(`,${column}=`) + 1;
+        options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
+    });
+    return options;
 };
 const showView = (hash) => {
     document.getElementById('app').innerHTML = '';
