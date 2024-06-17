@@ -25,9 +25,8 @@ const accountView = () => {
     document.getElementById('app').appendChild(account);
 };
 const actionsView = (subhash) => {
-    const record = generateOptions('record_date', 'user_data');
-    const location = generateOptions('location_id', 'user_data');
-    const patient = generateOptions('patient_id', 'user_data');
+    const record = generateOptions('record_date', 'record_data');
+    const patient = generateOptions('patient_id', 'patient_data');
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>

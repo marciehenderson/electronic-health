@@ -72,9 +72,18 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "[password_hash="+password+",]," {
 				fmt.Println("Login successful")
-				value := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: []string{""}, refs: []interface{}{""}})
-				cookie := http.Cookie{Name: "user_data", Value: value.(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				http.SetCookie(w, &cookie)
+				// Set cookies for user-accessible data
+				value := make([]interface{}, 3)
+				value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: []string{""}, refs: []interface{}{""}})
+				value[1] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{"placeholder"}})
+				value[2] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+				cookie := make([]http.Cookie, 3)
+				cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				cookie[1] = http.Cookie{Name: "client_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				cookie[2] = http.Cookie{Name: "user_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				http.SetCookie(w, &cookie[0])
+				http.SetCookie(w, &cookie[1])
+				http.SetCookie(w, &cookie[2])
 			} else {
 				fmt.Println("Login failed")
 			}

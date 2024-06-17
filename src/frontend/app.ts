@@ -31,9 +31,8 @@ const accountView = (): void => {
 // Actions View - Create, Modify, View Records
 const actionsView = (subhash: string): void => {
     // Set dropdown options based on database records
-    const record = generateOptions('record_date','user_data');
-    const location = generateOptions('location_id','user_data');
-    const patient = generateOptions('patient_id','user_data');
+    const record = generateOptions('record_date','record_data');
+    const patient = generateOptions('patient_id','patient_data');
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
