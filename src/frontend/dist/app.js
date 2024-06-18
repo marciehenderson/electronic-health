@@ -41,9 +41,18 @@ const actionsView = (subhash) => {
     var actionFormInner = `
         <div class="view-top-padding"></div>
         <form class="view-input-container" action="/action" method="post">
-            <md-outlined-text-field name="patient_id" label="Patient ID" type="text" required>
+            <md-outlined-select name="patient_id" label="Patient ID" id="patient-search" type="text" required>
                 <md-icon slot="trailing-icon">search</md-icon>
-            </md-outlined-text-field>
+    `;
+    patient.forEach((id) => {
+        actionFormInner += `
+                <md-select-option value="${id}">
+                    <div slot="headline">${id}</div>
+                </md-select-option>
+        `;
+    });
+    actionFormInner += `
+            </md-outlined-select>
     `;
     switch (subhash) {
         default:
@@ -124,21 +133,15 @@ const actionsView = (subhash) => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" type="text" required>
-                    <md-select-option value="1">
-                        <div slot="headline">01/01/2021</div>
+            `;
+            record.forEach((date) => {
+                actionFormInner += `
+                    <md-select-option value="${date}">
+                        <div slot="headline">${date}</div>
                     </md-select-option>
-                    <md-select-option value="2">
-                        <div slot="headline">01/02/2021</div>
-                    </md-select-option>
-                    <md-select-option value="3">
-                        <div slot="headline">01/03/2021</div>
-                    </md-select-option>
-                    <md-select-option value="4">
-                        <div slot="headline">01/04/2021</div>
-                    </md-select-option>
-                    <md-select-option value="5">
-                        <div slot="headline">01/05/2021</div>
-                    </md-select-option>
+                `;
+            });
+            actionFormInner += `
                 </md-outlined-select>
                 <div id="form-generated-container"></div>
             `;
