@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"unicode"
 
 	"github.com/go-sql-driver/mysql"
@@ -74,13 +75,18 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Login successful")
 				// Set cookies for user-accessible data
 				value := make([]interface{}, 3)
-				value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: []string{""}, refs: []interface{}{""}})
-				value[1] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{"placeholder"}})
-				value[2] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+				value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: nil, refs: nil})
+				value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+				// get user id from user data
+				userID := strings.Split(strings.Split(value[1].(string), "=")[1], ",")[0]
+				fmt.Println("User ID: " + userID)
+				value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 				cookie := make([]http.Cookie, 3)
-				cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				cookie[1] = http.Cookie{Name: "client_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				cookie[2] = http.Cookie{Name: "user_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				if value[0] != false {
+					cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				}
+				cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
 				http.SetCookie(w, &cookie[0])
 				http.SetCookie(w, &cookie[1])
 				http.SetCookie(w, &cookie[2])
@@ -206,7 +212,7 @@ func dbHandler(data dbData) interface{} {
 		// Generate basic select query
 		view := "SELECT " + selector + " FROM " + data.table
 		// Add a WHERE clause if keys and refs are provided
-		if data.keys[0] != "" {
+		if data.keys != nil {
 			view += comparator
 		}
 		// Query the database for all relevant rows

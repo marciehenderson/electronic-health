@@ -32,7 +32,7 @@ const accountView = (): void => {
 const actionsView = (subhash: string): void => {
     // Set dropdown options based on database records
     const record = generateOptions('record_date','record_data');
-    const patient = generateOptions('patient_id','patient_data');
+    const patient = generateOptions('patient_id','client_data');
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>

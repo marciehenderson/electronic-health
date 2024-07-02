@@ -116,7 +116,7 @@ func main() {
 			}
 		}
 		// Practitioner Table
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 101; i++ {
 			// Generate a random practitioner for the table
 			_, err := db.Exec("INSERT INTO practitioner (first_name, last_name, date_of_birth, street_address, contact_number, email) VALUES (?, ?, ?, ?, ?, ?)", randomWord(1, defaultSeed), randomWord(1, defaultSeed), randomDate(), randomWord(10, defaultSeed), "1234567890", randomWord(5, defaultSeed)+"@"+randomWord(5, defaultSeed)+".com")
 			// Log any errors
@@ -142,10 +142,18 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-		// Client Table
-		for i := 0; i < 100; i++ {
-			// Generate a random client for the table
-			_, err := db.Exec("INSERT INTO client (patient_id, practitioner_id, client_status, visits) VALUES (?, ?, ?, ?)", rand.Intn(100)+1, rand.Intn(100)+1, "active", rand.Intn(1000))
+		// // Client Table
+		// for i := 0; i < 100; i++ {
+		// 	// Generate a random client for the table
+		// 	_, err := db.Exec("INSERT INTO client (patient_id, practitioner_id, client_status, visits) VALUES (?, ?, ?, ?)", rand.Intn(100)+1, rand.Intn(100)+1, "active", rand.Intn(1000))
+		// 	// Log any errors
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// }
+		// Insert test clients
+		for i := 0; i < 5; i++ {
+			_, err = db.Exec("INSERT INTO client (patient_id, practitioner_id, client_status, visits) VALUES (?, ?, ?, ?)", i+1, 101, "active", 1000)
 			// Log any errors
 			if err != nil {
 				log.Fatal(err)
@@ -279,8 +287,8 @@ func randomCategory() string {
 }
 
 func randomDate() string {
-	// random year between 1920 and 2019
-	year := rand.Intn(100) + 1920
+	// random year between 1971 and 2030
+	year := rand.Intn(60) + 1971
 	// random month between 1 and 12
 	month := rand.Intn(12) + 1
 	// random day between 1 and 28

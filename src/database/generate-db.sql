@@ -65,8 +65,8 @@ CREATE TABLE IF NOT EXISTS record (
     location_id INT,
     record_type ENUM('check-up', 'annual', 'blood-work', 'vaccination', 'emergency'),
     notes TEXT,
-    code_cpt VARCHAR(10),
-    code_icd VARCHAR(10),
+    code_cpt VARCHAR(200),
+    code_icd VARCHAR(200),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (patient_id, record_date)
     -- FOREIGN KEY (patient_id) REFERENCES patient(id),
