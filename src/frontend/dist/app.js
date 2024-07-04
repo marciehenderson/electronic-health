@@ -27,6 +27,7 @@ const accountView = () => {
 const actionsView = (subhash) => {
     const record = generateOptions('record_date', 'record_data');
     const patient = generateOptions('patient_id', 'client_data');
+    console.log(patient);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -189,11 +190,11 @@ const setIndicator = (hash, id) => {
 };
 const generateOptions = (column, cookie) => {
     const cookies = `;  ${document.cookie};`;
-    const dIndex = cookies.indexOf(`;  ${cookie}=`) + 1;
+    const dIndex = cookies.indexOf(`; ${cookie}=`) + 1;
     const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
     let options = [];
     data.forEach((row) => {
-        const cIndex = row.indexOf(`,${column}=`) + 1;
+        const cIndex = row.indexOf(`${column}=`);
         options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
     });
     return options;

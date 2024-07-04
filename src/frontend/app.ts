@@ -33,6 +33,7 @@ const actionsView = (subhash: string): void => {
     // Set dropdown options based on database records
     const record = generateOptions('record_date','record_data');
     const patient = generateOptions('patient_id','client_data');
+    console.log(patient);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -212,13 +213,13 @@ const generateOptions = (column: string, cookie: string): string[] => {
     // fetch options from database
     const cookies = `;  ${document.cookie};`;
     // get all data from specified cookie
-    const dIndex = cookies.indexOf(`;  ${cookie}=`) + 1;
+    const dIndex = cookies.indexOf(`; ${cookie}=`) + 1;
     // store each row of data as an element in an array
     const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
     // get all instances of the specified column
     let options: string[] = [];
     data.forEach((row: string) => {
-        const cIndex = row.indexOf(`,${column}=`) + 1;
+        const cIndex = row.indexOf(`${column}=`);
         options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
     });
     return options;
