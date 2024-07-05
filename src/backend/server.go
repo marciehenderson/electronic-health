@@ -74,22 +74,42 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "[password_hash="+password+",]," {
 				fmt.Println("Login successful")
 				// Set cookies for user-accessible data
-				value := make([]interface{}, 3)
+				value := make([]interface{}, 4)
 				value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: nil, refs: nil})
 				value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 				// get user id from user data
-				userID := strings.Split(strings.Split(value[1].(string), "=")[1], ",")[0]
+				userID := strings.Split(strings.Split(value[1].(string), "id=")[1], ",")[0]
 				fmt.Println("User ID: " + userID)
 				value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-				cookie := make([]http.Cookie, 3)
-				if value[0] != false {
-					cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				// get array of patient ids from client data
+				firstCut := strings.Split(value[2].(string), "[patient_id=")
+				patientIDs := make([]string, len(firstCut))
+				for i := 0; i < len(firstCut); i++ {
+					patientIDs[i] = strings.Split(firstCut[i], ",")[0]
 				}
-				cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				http.SetCookie(w, &cookie[0])
-				http.SetCookie(w, &cookie[1])
-				http.SetCookie(w, &cookie[2])
+				fmt.Println(patientIDs)
+				value[3] = dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
+				cookie := make([]http.Cookie, 4)
+				_, ok := value[0].(string)
+				if ok {
+					cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+					http.SetCookie(w, &cookie[0])
+				}
+				_, ok = value[1].(string)
+				if ok {
+					cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+					http.SetCookie(w, &cookie[1])
+				}
+				_, ok = value[2].(string)
+				if ok {
+					cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+					http.SetCookie(w, &cookie[2])
+				}
+				_, ok = value[3].(string)
+				if ok {
+					cookie[3] = http.Cookie{Name: "patient_data", Value: value[3].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+					http.SetCookie(w, &cookie[3])
+				}
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -173,8 +193,21 @@ func dbHandler(data dbData) interface{} {
 	var comparator string = " WHERE "
 	if data.keys != nil {
 		for i := 0; i < len(data.keys); i++ {
-			// set comparator string for each key in query
-			comparator += data.keys[i] + " = '" + data.refs[i].(string) + "'"
+			// use IN for keys with mutiple refs
+			if _, ok := data.refs[i].([]string); ok {
+				comparator += data.keys[i] + " IN ("
+				for j := 0; j < len(data.refs[i].([]string)); j++ {
+					comparator += "'" + data.refs[i].([]string)[j] + "'"
+					// add commas between values, but not at the end
+					if j < len(data.refs[i].([]string))-1 {
+						comparator += ", "
+					}
+				}
+				comparator += ")"
+			} else {
+				// set comparator string for each key in query
+				comparator += data.keys[i] + " = '" + data.refs[i].(string) + "'"
+			}
 			// add AND between keys, but not at the end
 			if i < len(data.keys)-1 {
 				comparator += " AND "
