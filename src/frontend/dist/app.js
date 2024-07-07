@@ -26,7 +26,7 @@ const accountView = () => {
 };
 const actionsView = (subhash) => {
     const record = generateOptions('record_date', 'record_data');
-    const patient = generateOptions('patient_id', 'client_data');
+    const patient = [generateOptions('patient_id', 'client_data'), generateOptions('last_name', 'patient_data'), generateOptions('first_name', 'patient_data')];
     console.log(patient);
     const actions = document.createElement('div');
     actions.innerHTML = `
@@ -45,13 +45,14 @@ const actionsView = (subhash) => {
             <md-outlined-select name="patient_id" label="Patient ID" id="patient-search" type="text" required>
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
-    patient.forEach((id) => {
+    for (let i = 0; i < patient[0].length; i++) {
+        let value = patient[0][i] + ': ' + patient[1][i] + ', ' + patient[2][i];
         actionFormInner += `
-                <md-select-option value="${id}">
-                    <div slot="headline">${id}</div>
-                </md-select-option>
+            <md-select-option value="${patient[0][i]}">
+                <div slot="headline">${value}</div>
+            </md-select-option>
         `;
-    });
+    }
     actionFormInner += `
             </md-outlined-select>
     `;
@@ -70,13 +71,13 @@ const actionsView = (subhash) => {
                     <md-icon slot="trailing-icon">search</md-icon>
                 </md-outlined-text-field>
                 <md-outlined-select name="record_type" label="Record Type" type="text" required>
-                    <md-select-option value="checkup">
+                    <md-select-option value="check-up">
                         <div slot="headline">Check-Up</div>
                     </md-select-option>
                     <md-select-option value="annual">
                         <div slot="headline">Annual</div>
                     </md-select-option>
-                    <md-select-option value="bloodwork">
+                    <md-select-option value="blood-work">
                         <div slot="headline">Blood-Work</div>
                     </md-select-option>
                     <md-select-option value="vaccination">

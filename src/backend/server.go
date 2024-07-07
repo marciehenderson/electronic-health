@@ -265,7 +265,8 @@ func dbHandler(data dbData) interface{} {
 			err := rows.Scan(colstr...)
 			if err != nil {
 				fmt.Println(err)
-				return false
+				// skip to next row if error
+				continue
 			}
 			fmt.Println("Scanned Row...")
 			for i := 0; i < len(colstr); i++ {
