@@ -31,9 +31,9 @@ const accountView = (): void => {
 // Actions View - Create, Modify, View Records
 const actionsView = (subhash: string): void => {
     // Set dropdown options based on database records
-    const record = generateOptions('record_date','record_data');
+    const record = [generateOptions('record_date','record_data'), generateOptions('patient_id','record_data')];
     const patient = [generateOptions('patient_id','client_data'), generateOptions('last_name','patient_data'), generateOptions('first_name','patient_data')];
-    console.log(patient);
+    console.log(record);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -110,13 +110,13 @@ const actionsView = (subhash: string): void => {
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" type="text" required>
             `;
-            record.forEach((date: string) => {
+            for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${date}">
-                        <div slot="headline">${date}</div>
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}">
+                        <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
-            });
+            }
             actionFormInner += `
                 </md-outlined-select>
                 <md-outlined-select name="edit_value" label="Edit Value" type="text" required>
@@ -145,13 +145,13 @@ const actionsView = (subhash: string): void => {
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" type="text" required>
             `;
-            record.forEach((date: string) => {
+            for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${date}">
-                        <div slot="headline">${date}</div>
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}">
+                        <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
-            });
+            }
             actionFormInner += `
                 </md-outlined-select>
                 <div id="form-generated-container"></div>
@@ -212,7 +212,7 @@ const setIndicator = (hash: string, id: string): void => {
 // Generate dropdown options based on database records
 const generateOptions = (column: string, cookie: string): string[] => {
     // fetch options from database
-    const cookies = `;  ${document.cookie};`;
+    const cookies = `; ${document.cookie};`;
     // get all data from specified cookie
     const dIndex = cookies.indexOf(`; ${cookie}=`) + 1;
     // store each row of data as an element in an array
