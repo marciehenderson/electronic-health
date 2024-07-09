@@ -48,7 +48,18 @@ const actionsView = (subhash: string): void => {
     var actionFormInner: string = `
         <div class="view-top-padding"></div>
         <form class="view-input-container" action="/action" method="post">
-            <md-outlined-select name="patient_id" label="Patient ID" id="patient-search" type="text" required>
+            <md-outlined-select name="patient_id" label="Patient ID" id="patient_id" type="text" required onchange="
+                let patient = document.getElementById('patient_id').value;
+                let records = document.getElementsByClassName('date-option');
+                for (let i=0; i<records.length; i++) {
+                    let record = records[i];
+                    if (record.id.includes('pid-'+patient+'-')) {
+                        record.style.display = 'block';
+                    } else {
+                        record.style.display = 'none';
+                    }
+                }
+            ">
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
     for (let i=0; i<patient[0].length; i++) {
@@ -108,11 +119,11 @@ const actionsView = (subhash: string): void => {
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
-                <md-outlined-select name="record_date" label="Record Date" type="text" required>
+                <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required>
             `;
             for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}">
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
@@ -143,11 +154,11 @@ const actionsView = (subhash: string): void => {
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
-                <md-outlined-select name="record_date" label="Record Date" type="text" required>
+                <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required>
             `;
             for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}">
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;

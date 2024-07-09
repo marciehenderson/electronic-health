@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Create Terminals",
+            "dependsOn": [
+                "frontend",
+                "backend",
+                "database"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "frontend",
+            "type": "shell",
+            "command": "cd src/frontend; bash",
+            "icon": {
+                "id": "device-desktop",
+                "color": "terminal.ansiGreen"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                // "group": "terminal-group",
+                "showReuseMessage": false,
+                "clear": false,
+                "focus": false,
+                "echo": true, 
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "backend",
+            "type": "shell",
+            "command": "cd src/backend; bash",
+            "icon": {
+                "id": "server",
+                "color": "terminal.ansiYellow"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                // "group": "terminal-group",
+                "showReuseMessage": false,
+                "clear": false,
+                "focus": false,
+                "echo": true, 
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "database",
+            "type": "shell",
+            "command": "cd src/database; bash",
+            "icon": {
+                "id": "database",
+                "color": "terminal.ansiRed"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                // "group": "terminal-group",
+                "showReuseMessage": false,
+                "clear": false,
+                "focus": false,
+                "echo": true, 
+                "reveal": "silent"
+            }
+        },
+    ]
+}
