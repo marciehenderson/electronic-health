@@ -33,7 +33,6 @@ const actionsView = (subhash: string): void => {
     // Set dropdown options based on database records
     const record = [generateOptions('record_date','record_data'), generateOptions('patient_id','record_data')];
     const patient = [generateOptions('patient_id','client_data'), generateOptions('last_name','patient_data'), generateOptions('first_name','patient_data')];
-    console.log(record);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -55,10 +54,12 @@ const actionsView = (subhash: string): void => {
                     let record = records[i];
                     if (record.id.includes('pid-'+patient+'-')) {
                         record.style.display = 'block';
-                    } else {
+                    } else if (!record.id.includes('default')) {
                         record.style.display = 'none';
                     }
                 }
+                let recordDate = document.getElementById('record_date');
+                recordDate.selectedIndex = 0;
             ">
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
@@ -120,10 +121,13 @@ const actionsView = (subhash: string): void => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required>
+                    <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
+                        <div slot="headline"></div>
+                    </md-select-option>
             `;
             for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-">
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
@@ -155,10 +159,13 @@ const actionsView = (subhash: string): void => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required>
+                    <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
+                        <div slot="headline"></div>
+                    </md-select-option>
             `;
             for (let i=0; i<record[0].length; i++) {
                 actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-">
+                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
