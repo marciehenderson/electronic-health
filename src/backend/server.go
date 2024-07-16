@@ -66,10 +66,10 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Parse login form data
 			r.ParseForm()
 			// Validate user credentials
-			username := inputValidation(r.Form.Get("username"), "login")
-			password := inputValidation(r.Form.Get("password"), "login")
-			fmt.Println("Username: " + username)
-			fmt.Println("Password: " + password)
+			username := inputValidation(r.Form.Get("username"), "basic")
+			password := inputValidation(r.Form.Get("password"), "basic")
+			// fmt.Println("Username: " + username)
+			// fmt.Println("Password: " + password)
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "[password_hash="+password+",]," {
 				fmt.Println("Login successful")
@@ -79,7 +79,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 				// get user id from user data
 				userID := strings.Split(strings.Split(value[1].(string), "id=")[1], ",")[0]
-				fmt.Println("User ID: " + userID)
+				// fmt.Println("User ID: " + userID)
 				value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 				// get array of patient ids from client data
 				firstCut := strings.Split(value[2].(string), "[patient_id=")
@@ -87,7 +87,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				for i := 0; i < len(firstCut); i++ {
 					patientIDs[i] = strings.Split(firstCut[i], ",")[0]
 				}
-				fmt.Println(patientIDs)
+				// fmt.Println(patientIDs)
 				value[3] = dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
 				cookie := make([]http.Cookie, 4)
 				_, ok := value[0].(string)
@@ -120,28 +120,26 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/action" {
 			// Parse action form data
 			r.ParseForm()
-			subHash := "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "login")
-			patientID := inputValidation(r.Form.Get("patient_id"), "login")
-			locationID := inputValidation(r.Form.Get("location_id"), "login")
-			recordDate := inputValidation(r.Form.Get("record_date"), "login")
-			recordType := inputValidation(r.Form.Get("record_type"), "login")
-			editValue := inputValidation(r.Form.Get("edit_value"), "login")
-			notes := inputValidation(r.Form.Get("notes"), "login")
-			fmt.Println("Sub Hash: " + subHash)
-			fmt.Println("Patient ID: " + patientID)
-			fmt.Println("Location ID: " + locationID)
-			fmt.Println("Record Date: " + recordDate)
-			fmt.Println("Record Type: " + recordType)
-			fmt.Println("Edit Value: " + editValue)
-			fmt.Println("Notes: " + notes)
+			subHash := "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "basic")
+			patientID := inputValidation(r.Form.Get("patient_id"), "basic")
+			locationID := inputValidation(r.Form.Get("location_id"), "basic")
+			recordDate := inputValidation(r.Form.Get("record_date"), "datetime")
+			recordType := inputValidation(r.Form.Get("record_type"), "basic")
+			notes := inputValidation(r.Form.Get("notes"), "basic")
 			// Query database based on action sub-hash
 			switch subHash {
 			case "/#actions+create":
+				// create new record
 				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, locationID, recordType, notes}})
 			case "/#actions+modify":
-				dbHandler(dbData{query: "modify", table: "record", cols: []string{editValue}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{"placeholder_repacement_value"}})
+				// modify existing record
+				// dbHandler(dbData{query: "modify", table: "record", cols: []string{editValue}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{"placeholder_repacement_value"}})
 			case "/#actions+view":
-				dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "practitioner_id", "location_id", "notes", "code_cpt", "code_icd"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
+				// view existing record
+				value := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
+				// set cookie for currently requested record
+				cookie := http.Cookie{Name: "record_view", Value: value.(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				http.SetCookie(w, &cookie)
 			}
 			// reload action page
 			w.Header().Set("Content-Type", "text/html")
@@ -215,7 +213,7 @@ func dbHandler(data dbData) interface{} {
 		}
 	}
 	// Query selection successful
-	fmt.Println("Query selection successful")
+	// fmt.Println("Query selection successful")
 	// Query database
 	switch data.query {
 	case "create":
@@ -268,14 +266,14 @@ func dbHandler(data dbData) interface{} {
 				// skip to next row if error
 				continue
 			}
-			fmt.Println("Scanned Row...")
+			// fmt.Println("Scanned Row...")
 			for i := 0; i < len(colstr); i++ {
 				rowstr += data.cols[i] + "=" + *colstr[i].(*string) + ","
 			}
 			rowstr += "]"
 			output += rowstr + ","
 		}
-		fmt.Println(output)
+		// fmt.Println(output)
 		// Return results
 		return output
 	default:
@@ -288,20 +286,42 @@ func dbHandler(data dbData) interface{} {
 
 // Validate input string based on category
 func inputValidation(input string, category string) string {
-	var validatedInput string
+	var validated string
 	switch category {
-	case "login":
-		for _, c := range input {
-			var character = string(c)
-			// Sanitize character if it isn't alphanumeric
-			if !unicode.IsLetter(c) && !unicode.IsDigit(c) {
-				// convert to unicode
-				character = "\\" + fmt.Sprintf("%U", c) + "\\"
-			}
-			validatedInput += character
-		}
+	case "basic":
+		// basic method of validating input.
+		// simply sanitizes string to replace
+		// non-alphanumeric with unicode.
+		validated = sanitizeString(input)
+	case "datetime":
+		// input validation for datetime
+		// inputs. ensures values are compliant
+		// with SQL datatype structure.
+		validated = sanitizeString(input)
+		// allow hyphens in fetch requests
+		// for compliance with DATE and
+		// TIMESTAMP datatypes.
+		validated = strings.ReplaceAll(validated, "\\U+002D\\", "-")
+		// allow colons in fetch requests
+		validated = strings.ReplaceAll(validated, "\\U+003A\\", ":")
+		// allow spaces in fetch requests
+		validated = strings.ReplaceAll(validated, "\\U+0020\\", " ")
 	default:
 		fmt.Println("Invalid input category")
 	}
-	return validatedInput
+	return validated
+}
+
+func sanitizeString(input string) string {
+	var output string
+	for _, c := range input {
+		var character = string(c)
+		// sanitize non-alphanumeric characters
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) {
+			// convert character to unicode
+			character = "\\" + fmt.Sprintf("%U", c) + "\\"
+		}
+		output += character
+	}
+	return output
 }
