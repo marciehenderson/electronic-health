@@ -126,10 +126,10 @@ const actionsView = (subhash) => {
                                 document.getElementById('form-generated-container').innerHTML = 
                                 '<table>\
                                     <tr>\
-                                        <th>Patient ID</th>\
-                                        <th>Record Date</th>\
-                                        <th>Location ID</th>\
-                                        <th>Record Type</th>\
+                                        <th>Patient</th>\
+                                        <th>Date</th>\
+                                        <th>Location</th>\
+                                        <th>Type</th>\
                                         <th>Notes</th>\
                                     </tr>\
                                     <tr>\
