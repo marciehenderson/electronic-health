@@ -9,6 +9,41 @@ import '@material/web/textfield/outlined-text-field';
 import '@material/web/textfield/filled-text-field';
 import '@material/web/select/outlined-select';
 import '@material/web/select/select-option';
+const FORM_GENERATED_CONTAINER_SCRIPT = `\
+let patient = document.getElementById('patient_id');
+let record = document.getElementById('record_date');
+if (patient.value !== '-1' && record.value !== '-1') {
+    let xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+            const cookies = '; ' + document.cookie + ';';
+            const dIndex = cookies.indexOf('; record_view=') + 1;
+            const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
+            let form = data[0].substring(15, data[0].length-3).split(',');
+            document.getElementById('form-generated-container').innerHTML = 
+            '<table>\
+                <tr>\
+                    <th>Patient</th>\
+                    <th>Date</th>\
+                    <th>Location</th>\
+                    <th>Type</th>\
+                    <th>Notes</th>\
+                </tr>\
+                <tr>\
+                    <td>'+form[0].replace('patient_id=','')+'</td>\
+                    <td>'+form[1].replace('record_date=','')+'</td>\
+                    <td>'+form[2].replace('location_id=','')+'</td>\
+                    <td>'+form[3].replace('record_type=','')+'</td>\
+                    <td>'+form[4].replace('notes=','')+'</td>\
+                </tr>\
+            </table>';
+        }
+    }
+    xmlHttp.open('POST', '/action', true);
+    xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xmlHttp.send('sub_hash=view&patient_id='+patient.value+'&record_date='+record.value);
+}
+`;
 const accountView = () => {
     const account = document.createElement('account');
     account.innerHTML = `
@@ -113,39 +148,7 @@ const actionsView = (subhash) => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
-                    let patient = document.getElementById('patient_id');
-                    let record = document.getElementById('record_date');
-                    if (patient.value !== '-1' && record.value !== '-1') {
-                        let xmlHttp = new XMLHttpRequest();
-                        xmlHttp.onreadystatechange = function() {
-                            if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                                const cookies = '; ' + document.cookie + ';';
-                                const dIndex = cookies.indexOf('; record_view=') + 1;
-                                const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
-                                let form = data[0].substring(15, data[0].length-3).split(',');
-                                document.getElementById('form-generated-container').innerHTML = 
-                                '<table>\
-                                    <tr>\
-                                        <th>Patient</th>\
-                                        <th>Date</th>\
-                                        <th>Location</th>\
-                                        <th>Type</th>\
-                                        <th>Notes</th>\
-                                    </tr>\
-                                    <tr>\
-                                        <td>'+form[0].replace('patient_id=','')+'</td>\
-                                        <td>'+form[1].replace('record_date=','')+'</td>\
-                                        <td>'+form[2].replace('location_id=','')+'</td>\
-                                        <td>'+form[3].replace('record_type=','')+'</td>\
-                                        <td>'+form[4].replace('notes=','')+'</td>\
-                                    </tr>\
-                                </table>';
-                            }
-                        }
-                        xmlHttp.open('POST', '/action', true);
-                        xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        xmlHttp.send('sub_hash=view&patient_id='+patient.value+'&record_date='+record.value);
-                    }
+                    ${FORM_GENERATED_CONTAINER_SCRIPT}
                 ">
                     <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
                         <div slot="headline"></div>
@@ -172,7 +175,9 @@ const actionsView = (subhash) => {
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
-                <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required>
+                <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
+                    ${FORM_GENERATED_CONTAINER_SCRIPT}
+                ">
                     <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
                         <div slot="headline"></div>
                     </md-select-option>
@@ -191,10 +196,17 @@ const actionsView = (subhash) => {
             break;
     }
     ;
-    actionFormInner += `
+    if (subhash !== 'view') {
+        actionFormInner += `
             <md-elevated-button type="submit">Submit</md-elevated-button>
         </form>
     `;
+    }
+    else {
+        actionFormInner += `
+            </form>
+        `;
+    }
     actionsSubView.innerHTML = actionFormInner;
     actionsSubView.classList.add('subview');
     document.getElementsByClassName('view')[0].appendChild(actionsSubView);
