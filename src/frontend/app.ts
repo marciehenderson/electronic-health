@@ -11,8 +11,8 @@ import '@material/web/textfield/filled-text-field';
 import '@material/web/select/outlined-select';
 import '@material/web/select/select-option';
 // Compile with: npx tsc src/frontend/app.ts && npx rollup -p @rollup/plugin-node-resolve ./dist/app.js -o ./dist/bundle.js
-// Constants
-const FORM_GENERATED_CONTAINER_SCRIPT = `\
+// Script Constants
+const FORM_GENERATED_CONTAINER_SCRIPT_START = `\
 let patient = document.getElementById('patient_id');
 let record = document.getElementById('record_date');
 if (patient.value !== '-1' && record.value !== '-1') {
@@ -32,6 +32,14 @@ if (patient.value !== '-1' && record.value !== '-1') {
                     <th>Type</th>\
                     <th>Notes</th>\
                 </tr>\
+`;
+const FORM_GENERATED_CONTAINER_SCRIPT_END = `\
+    xmlHttp.open('POST', '/action', true);
+    xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xmlHttp.send('sub_hash=view&patient_id='+patient.value+'&record_date='+record.value);
+}
+`;
+const FORM_GENERATED_CONTAINER_SCRIPT_VIEW = FORM_GENERATED_CONTAINER_SCRIPT_START + `\
                 <tr>\
                     <td>'+form[0].replace('patient_id=','')+'</td>\
                     <td>'+form[1].replace('record_date=','')+'</td>\
@@ -42,11 +50,24 @@ if (patient.value !== '-1' && record.value !== '-1') {
             </table>';
         }
     }
-    xmlHttp.open('POST', '/action', true);
-    xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    xmlHttp.send('sub_hash=view&patient_id='+patient.value+'&record_date='+record.value);
-}
-`
+` + FORM_GENERATED_CONTAINER_SCRIPT_END;
+const FORM_GENERATED_CONTAINER_SCRIPT_MODIFY = FORM_GENERATED_CONTAINER_SCRIPT_START + `\
+                <tr>\
+                    <td>'+form[0].replace('patient_id=','')+'</td>\
+                    <td>'+form[1].replace('record_date=','')+'</td>\
+                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;location_id&quot; id=&quot;location_id&quot;></textarea></td>\
+                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;record_type&quot; id=&quot;record_type&quot;></textarea></td>\
+                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;notes&quot; id=&quot;notes&quot;></textarea></td>\
+                </tr>\
+            </table>';
+            let generatedInputs = document.getElementsByClassName('generated-input');
+            for (let i=0; i<generatedInputs.length; i++) {
+                let input = generatedInputs[i];
+                input.value = form[i+2].substring(form[i+2].indexOf('=')+1);
+            }
+        }
+    }
+` + FORM_GENERATED_CONTAINER_SCRIPT_END;
 // View Functions
 // Account View - User Login Page
 const accountView = (): void => {
@@ -157,7 +178,7 @@ const actionsView = (subhash: string): void => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
-                    ${FORM_GENERATED_CONTAINER_SCRIPT}
+                    ${FORM_GENERATED_CONTAINER_SCRIPT_MODIFY}
                 ">
                     <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
                         <div slot="headline"></div>
@@ -186,7 +207,7 @@ const actionsView = (subhash: string): void => {
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="view" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
-                    ${FORM_GENERATED_CONTAINER_SCRIPT}
+                    ${FORM_GENERATED_CONTAINER_SCRIPT_VIEW}
                 ">
                     <md-select-option value="-1" class="date-option" id="date-option-pid-default-">
                         <div slot="headline"></div>

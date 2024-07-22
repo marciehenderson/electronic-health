@@ -115,6 +115,29 @@ body {
     color: var(--md-secondary-tab-label-text-color);
     font-size: var(--sys-font-size-small);
 }
+/* form generated container input style */
+.generated-input
+{
+    width: 100%;
+    padding: 0;
+    border-style: none;
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    font-family: 'Noto Serif', serif;
+    font-size: var(--sys-font-size);
+    text-align: center;
+    
+}
+.generated-input:focus
+{
+    outline: none;
+    border-style: none;
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    font-family: 'Noto Serif', serif;
+    font-size: var(--sys-font-size);
+    text-align: center;
+}
 /* app page view style */
 .view {
     display: flex;
