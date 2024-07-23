@@ -133,6 +133,9 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, locationID, recordType, notes}})
 			case "/#actions+modify":
 				// modify existing record
+				if locationID != "" && recordType != "" && notes != "" {
+					dbHandler(dbData{query: "modify", table: "record", cols: []string{"location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{locationID, recordType, notes}})
+				}
 				// dbHandler(dbData{query: "modify", table: "record", cols: []string{editValue}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{"placeholder_repacement_value"}})
 			case "/#actions+view":
 				// view existing record
@@ -187,7 +190,9 @@ func dbHandler(data dbData) interface{} {
 			inputs += ", "
 		}
 	}
-	inputs += ")"
+	if data.query != "modify" {
+		inputs += ")"
+	}
 	var comparator string = " WHERE "
 	if data.keys != nil {
 		for i := 0; i < len(data.keys); i++ {
@@ -218,7 +223,7 @@ func dbHandler(data dbData) interface{} {
 	switch data.query {
 	case "create":
 		// Generate insert query
-		var insert string = "INSERT INTO " + data.table + " (" + selector + ") " + values + inputs
+		var insert string = "INSERT INTO " + data.table + " (" + selector + ")" + values + inputs
 		// Create a new entry in the requested table
 		_, err := db.Exec(insert)
 		if err != nil {
@@ -228,7 +233,18 @@ func dbHandler(data dbData) interface{} {
 		}
 	case "modify":
 		// Generate update query
-		var update string = "UPDATE " + data.table + " SET " + " (" + selector + ") " + values + inputs + comparator
+		columns := strings.Split(selector, ",")
+		updates := strings.Split(inputs, ",")
+		var update string = "UPDATE " + data.table + " SET "
+		for i := 0; i < len(columns); i++ {
+			// set update string for each column in query
+			update += columns[i] + " =" + updates[i]
+			// add commas between values, but not at the end
+			if i < len(columns)-1 {
+				update += ","
+			}
+		}
+		update += comparator
 		// Modify an existing entry in the requested table
 		_, err := db.Exec(update)
 		if err != nil && err != sql.ErrNoRows {
