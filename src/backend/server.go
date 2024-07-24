@@ -2,6 +2,7 @@ package main
 
 // Import necessary packages
 import (
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -35,12 +36,25 @@ type dbData struct {
 
 // Main function of the server
 func main() {
-	// Configure and start the server
-	http.HandleFunc("/", appHandler)
-	fs := http.FileServer(http.Dir("../frontend/"))
-	http.Handle("/..frontend/", http.StripPrefix("/..frontend/", fs))
-	fmt.Println("Server running on: http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Configure tls for secure connections
+	cert, err := tls.LoadX509KeyPair("./cert/server.crt", "./cert/server.key")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+	// Configure the router
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", appHandler)
+	// Start the server
+	server := &http.Server{
+		Addr:      ":8080",
+		Handler:   mux,
+		TLSConfig: tlsConfig,
+	}
+	fmt.Println("Server running on: https://localhost:8080")
+	log.Fatal(server.ListenAndServeTLS("", ""))
 }
 
 // Handle all requests to the server

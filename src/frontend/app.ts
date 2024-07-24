@@ -1,4 +1,4 @@
-// Matieral Web Components
+// Material Web Components
 import '@material/web/icon/icon';
 import '@material/web/button/elevated-button';
 import '@material/web/list/list';
