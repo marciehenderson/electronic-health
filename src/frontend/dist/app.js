@@ -69,7 +69,55 @@ const accountView = () => {
     const account = document.createElement('account');
     account.innerHTML = `
         <div class="view-top-padding"></div>
-        <form class="view-input-container" action="/login" method="post">
+        <form class="view-input-container" action="/login" method="post" onsubmit="
+            async function fetchUserData(form) {
+                console.log('Fetching user data...');
+                const options = {
+                    method: 'get',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic' + btoa(form.username.value + ':' + form.password.value)
+                    }
+                }
+                await fetch('/userdata', options).then((response) => {
+                    if (!response.ok) {
+                        throw new Error('HTTP error: ' + response.status);
+                    }
+                        let json = response.json();
+                        console.log('Response:', json);
+                        return json;
+                }).then((data) => {
+                    // store user data with indexedDB
+                    let request = indexedDB.open('user_data');
+                    request.onupgradeneeded = function(event) {
+                        let db = event.target.result;
+                        let objectStore = db.createObjectStore('data', { keyPath: 'id' });
+                        objectStore.createIndex('user_hash', 'user_hash', { unique: true });
+                        objectStore.createIndex('password_hash', 'password_hash', { unique: false });
+                    };
+                    request.onerror = function(event) {
+                        console.log('Database error: ' + event.target.errorCode);
+                    };
+                    request.onsuccess = function(event) {
+                        let db = event.target.result;
+                        let objectStore = db.transaction('data', 'readwrite').objectStore('data');
+                        console.log('Adding data:', data);
+                        let request = objectStore.add(JSON.parse(data));
+                        request.onsuccess = function(event) {
+                            console.log('Data added:', event.target.result);
+                        };
+                        request.onerror = function(event) {
+                            console.log('Data error:', event.target.errorCode);
+                        };
+                        form.submit();
+                    };
+                }).catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+            fetchUserData(this);
+            return false;
+        ">
             <md-outlined-text-field name="username" label="Username" type="text" required>
             </md-outlined-text-field>
             <md-outlined-text-field name="password" label="Password" type="password" required>

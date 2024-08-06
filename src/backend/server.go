@@ -4,6 +4,8 @@ package main
 import (
 	"crypto/tls"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -74,6 +76,28 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/css")
 			http.ServeFile(w, r, "../frontend/style.css")
 		}
+		if r.URL.Path == "/userdata" {
+			// respond to request with user data in json format
+			// get user data from database
+			fmt.Println("User Data Requested")
+			auth := r.Header.Get("Authorization")
+			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
+			if err != nil {
+				fmt.Println(err)
+			}
+			username := strings.Split(string(cred), ":")[0]
+			fmt.Println("Username: " + username)
+			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			fmt.Println("User Data: " + userData.(string))
+			// convert user data to json format
+			jsonData, err := json.Marshal(userData)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("User JSON: " + string(jsonData))
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonData)
+		}
 	case "POST":
 		// Handle POST requests
 		if r.URL.Path == "/login" {
@@ -82,48 +106,46 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Validate user credentials
 			username := inputValidation(r.Form.Get("username"), "basic")
 			password := inputValidation(r.Form.Get("password"), "basic")
-			// fmt.Println("Username: " + username)
-			// fmt.Println("Password: " + password)
 			// Query database for user credentials
-			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "[password_hash="+password+",]," {
+			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
 				fmt.Println("Login successful")
 				// Set cookies for user-accessible data
-				value := make([]interface{}, 4)
-				value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: nil, refs: nil})
-				value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-				// get user id from user data
-				userID := strings.Split(strings.Split(value[1].(string), "id=")[1], ",")[0]
-				// fmt.Println("User ID: " + userID)
-				value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-				// get array of patient ids from client data
-				firstCut := strings.Split(value[2].(string), "[patient_id=")
-				patientIDs := make([]string, len(firstCut))
-				for i := 0; i < len(firstCut); i++ {
-					patientIDs[i] = strings.Split(firstCut[i], ",")[0]
-				}
+				// value := make([]interface{}, 4)
+				// value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: nil, refs: nil})
+				// value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+				// // get user id from user data
+				// userID := strings.Split(strings.Split(value[1].(string), "id=")[1], ",")[0]
+				// // fmt.Println("User ID: " + userID)
+				// value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+				// // get array of patient ids from client data
+				// firstCut := strings.Split(value[2].(string), "[patient_id=")
+				// patientIDs := make([]string, len(firstCut))
+				// for i := 0; i < len(firstCut); i++ {
+				// 	patientIDs[i] = strings.Split(firstCut[i], ",")[0]
+				// }
 				// fmt.Println(patientIDs)
-				value[3] = dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
-				cookie := make([]http.Cookie, 4)
-				_, ok := value[0].(string)
-				if ok {
-					cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-					http.SetCookie(w, &cookie[0])
-				}
-				_, ok = value[1].(string)
-				if ok {
-					cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-					http.SetCookie(w, &cookie[1])
-				}
-				_, ok = value[2].(string)
-				if ok {
-					cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-					http.SetCookie(w, &cookie[2])
-				}
-				_, ok = value[3].(string)
-				if ok {
-					cookie[3] = http.Cookie{Name: "patient_data", Value: value[3].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-					http.SetCookie(w, &cookie[3])
-				}
+				// value[3] = dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
+				// cookie := make([]http.Cookie, 4)
+				// _, ok := value[0].(string)
+				// if ok {
+				// 	cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				// 	http.SetCookie(w, &cookie[0])
+				// }
+				// _, ok = value[1].(string)
+				// if ok {
+				// 	cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				// 	http.SetCookie(w, &cookie[1])
+				// }
+				// _, ok = value[2].(string)
+				// if ok {
+				// 	cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				// 	http.SetCookie(w, &cookie[2])
+				// }
+				// _, ok = value[3].(string)
+				// if ok {
+				// 	cookie[3] = http.Cookie{Name: "patient_data", Value: value[3].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
+				// 	http.SetCookie(w, &cookie[3])
+				// }
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -283,9 +305,9 @@ func dbHandler(data dbData) interface{} {
 			return false
 		}
 		// Iterate through all rows and append to output
-		// Output format: [col1=val1,col2=val2,...],[col1=val1,col2=val2,...],...
+		// Output format: {"col1":"val1","col2":"val2",...},{"col1":"val1","col2":"val2",...},...
 		for rows.Next() {
-			rowstr := "["
+			rowstr := "{"
 			for i := 0; i < len(data.cols); i++ {
 				colstr[i] = new(string)
 			}
@@ -298,10 +320,18 @@ func dbHandler(data dbData) interface{} {
 			}
 			// fmt.Println("Scanned Row...")
 			for i := 0; i < len(colstr); i++ {
-				rowstr += data.cols[i] + "=" + *colstr[i].(*string) + ","
+				rowstr += "\"" + data.cols[i] + "\":\"" + *colstr[i].(*string) + "\""
+				// add commas between columns, but not at the end
+				if i < len(colstr)-1 {
+					rowstr += ","
+				}
 			}
-			rowstr += "]"
-			output += rowstr + ","
+			rowstr += "}"
+			output += rowstr
+			// add commas between rows, but not at the end
+			if rows.Next() {
+				output += ","
+			}
 		}
 		// fmt.Println(output)
 		// Return results
