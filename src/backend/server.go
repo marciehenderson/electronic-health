@@ -79,7 +79,6 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/userdata" {
 			// respond to request with user data in json format
 			// get user data from database
-			fmt.Println("User Data Requested")
 			auth := r.Header.Get("Authorization")
 			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
 			if err != nil {
@@ -88,13 +87,66 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			username := strings.Split(string(cred), ":")[0]
 			fmt.Println("Username: " + username)
 			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-			fmt.Println("User Data: " + userData.(string))
 			// convert user data to json format
 			jsonData, err := json.Marshal(userData)
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println("User JSON: " + string(jsonData))
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonData)
+		}
+		if r.URL.Path == "/recorddata" {
+			// respond to request with record data in json format
+			// get record data from database
+			auth := r.Header.Get("Authorization")
+			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
+			if err != nil {
+				fmt.Println(err)
+			}
+			username := strings.Split(string(cred), ":")[0]
+			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id", "location_id", "record_type", "notes"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+			fmt.Println("Record Data: " + recordData.(string))
+			// convert record data to json format
+			jsonData, err := json.Marshal(recordData)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Record JSON: " + string(jsonData))
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonData)
+		}
+		if r.URL.Path == "/clientdata" {
+			// respond to request with client data in json format
+			// get client data from database
+			fmt.Println("Client Data Requested")
+			userID := r.Header.Get("UserID")
+			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+			fmt.Println("Client Data: " + clientData.(string))
+			// convert client data to json format
+			jsonData, err := json.Marshal(clientData)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Client JSON: " + string(jsonData))
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonData)
+		}
+		if r.URL.Path == "/patientdata" {
+			// respond to request with patient data in json format
+			// get patient data from database
+			fmt.Println("Patient Data Requested")
+			clientData := r.Header.Get("ClientData")
+			patientIDs := strings.Split(strings.Split(clientData, "'patient_id':'")[1], "',")
+			patientData := dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
+			fmt.Println("Patient Data: " + patientData.(string))
+			// convert patient data to json format
+			jsonData, err := json.Marshal(patientData)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Patient JSON: " + string(jsonData))
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
 		}
@@ -109,43 +161,6 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
 				fmt.Println("Login successful")
-				// Set cookies for user-accessible data
-				// value := make([]interface{}, 4)
-				// value[0] = dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes", "created_at"}, keys: nil, refs: nil})
-				// value[1] = dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-				// // get user id from user data
-				// userID := strings.Split(strings.Split(value[1].(string), "id=")[1], ",")[0]
-				// // fmt.Println("User ID: " + userID)
-				// value[2] = dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-				// // get array of patient ids from client data
-				// firstCut := strings.Split(value[2].(string), "[patient_id=")
-				// patientIDs := make([]string, len(firstCut))
-				// for i := 0; i < len(firstCut); i++ {
-				// 	patientIDs[i] = strings.Split(firstCut[i], ",")[0]
-				// }
-				// fmt.Println(patientIDs)
-				// value[3] = dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
-				// cookie := make([]http.Cookie, 4)
-				// _, ok := value[0].(string)
-				// if ok {
-				// 	cookie[0] = http.Cookie{Name: "record_data", Value: value[0].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				// 	http.SetCookie(w, &cookie[0])
-				// }
-				// _, ok = value[1].(string)
-				// if ok {
-				// 	cookie[1] = http.Cookie{Name: "user_data", Value: value[1].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				// 	http.SetCookie(w, &cookie[1])
-				// }
-				// _, ok = value[2].(string)
-				// if ok {
-				// 	cookie[2] = http.Cookie{Name: "client_data", Value: value[2].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				// 	http.SetCookie(w, &cookie[2])
-				// }
-				// _, ok = value[3].(string)
-				// if ok {
-				// 	cookie[3] = http.Cookie{Name: "patient_data", Value: value[3].(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				// 	http.SetCookie(w, &cookie[3])
-				// }
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -204,7 +219,7 @@ func dbHandler(data dbData) interface{} {
 		return false
 	}
 	// Connection successful
-	fmt.Println("Connected to database")
+	// fmt.Println("Connected to database")
 	// Generate selection query based on data
 	var selector string = ""
 	var values string = " VALUES ("
