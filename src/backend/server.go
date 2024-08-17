@@ -85,7 +85,6 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println(err)
 			}
 			username := strings.Split(string(cred), ":")[0]
-			fmt.Println("Username: " + username)
 			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 			// convert user data to json format
 			jsonData, err := json.Marshal(userData)
@@ -107,46 +106,59 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
 			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id", "location_id", "record_type", "notes"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-			fmt.Println("Record Data: " + recordData.(string))
 			// convert record data to json format
 			jsonData, err := json.Marshal(recordData)
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println("Record JSON: " + string(jsonData))
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
 		}
 		if r.URL.Path == "/clientdata" {
 			// respond to request with client data in json format
 			// get client data from database
-			fmt.Println("Client Data Requested")
-			userID := r.Header.Get("UserID")
+			auth := r.Header.Get("Authorization")
+			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
+			if err != nil {
+				fmt.Println(err)
+			}
+			username := strings.Split(string(cred), ":")[0]
+			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
 			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-			fmt.Println("Client Data: " + clientData.(string))
 			// convert client data to json format
 			jsonData, err := json.Marshal(clientData)
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println("Client JSON: " + string(jsonData))
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
 		}
 		if r.URL.Path == "/patientdata" {
 			// respond to request with patient data in json format
 			// get patient data from database
-			fmt.Println("Patient Data Requested")
-			clientData := r.Header.Get("ClientData")
-			patientIDs := strings.Split(strings.Split(clientData, "'patient_id':'")[1], "',")
-			patientData := dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email", "created_at", "updated_at"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
-			fmt.Println("Patient Data: " + patientData.(string))
+			auth := r.Header.Get("Authorization")
+			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
+			if err != nil {
+				fmt.Println(err)
+			}
+			username := strings.Split(string(cred), ":")[0]
+			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+			clientData = clientData.(string) + "," // append comma to end of string
+			patientIDs := []string{}
+			data := strings.Split(clientData.(string), "{\"patient_id\":\"")
+			for i := 1; i < len(data); i++ {
+				patientID := strings.Split(data[i], "\"}")[0]
+				patientIDs = append(patientIDs, patientID)
+			}
+			patientData := dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
 			// convert patient data to json format
 			jsonData, err := json.Marshal(patientData)
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println("Patient JSON: " + string(jsonData))
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
 		}
@@ -309,6 +321,7 @@ func dbHandler(data dbData) interface{} {
 		colstr := make([]interface{}, len(data.cols))
 		// Generate basic select query
 		view := "SELECT " + selector + " FROM " + data.table
+		// fmt.Println(view + comparator)
 		// Add a WHERE clause if keys and refs are provided
 		if data.keys != nil {
 			view += comparator

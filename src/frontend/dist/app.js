@@ -70,8 +70,9 @@ const accountView = () => {
     account.innerHTML = `
         <div class="view-top-padding"></div>
         <form class="view-input-container" action="/login" method="post" onsubmit="
-            async function fetchUserData(req, form, ver, store, key, index) {
-                console.log('Fetching user data...');
+            // asynchronous function to fetch user data and store in indexedDB
+            async function fetchUserData(req, form, ver, store, key, index, next) {
+                console.log('Fetching user data from: ' + req + '...');
                 const options = {
                     method: 'get',
                     headers: {
@@ -79,13 +80,14 @@ const accountView = () => {
                         'Authorization': 'Basic' + btoa(form.username.value + ':' + form.password.value)
                     }
                 }
-                await fetch(req, options).then((response) => {
+                // return true if successful, false if not
+                return await fetch(req, options).then((response) => {
                     if (!response.ok) {
                         throw new Error('HTTP error: ' + response.status);
                     }
-                        let json = response.json();
-                        console.log('Response:', json);
-                        return json;
+                    let json = response.json();
+                    console.log('Response:', json);
+                    return json;
                 }).then((data) => {
                     // store user data with indexedDB
                     let request = indexedDB.open('user_data', ver);
@@ -103,21 +105,60 @@ const accountView = () => {
                         let db = event.target.result;
                         let objectStore = db.transaction(store, 'readwrite').objectStore(store);
                         console.log('Adding data:', data);
-                        let request = objectStore.add(JSON.parse(data));
-                        request.onsuccess = function(event) {
-                            console.log('Data added:', event.target.result);
-                        };
-                        request.onerror = function(event) {
-                            console.log('Data error:', event.target.errorCode);
-                        };
-                        form.submit();
+                        // if there is more than one row of data, split and add each row individually
+                        if (data.includes('},{')) {
+                            data = data.split('},');
+                            for (let i=0; i<data.length; i++) {
+                                if (!data[i].includes('}')) {
+                                    data[i] = data[i] + '}';
+                                }
+                                let request = objectStore.add(JSON.parse(data[i]));
+                                // if this is the last row of data, call next
+                                if (i === data.length-1) {
+                                    request.onsuccess = function(event) {
+                                        console.log('Data added:', event.target.result);
+                                        next();
+                                    };
+                                } else {
+                                    request.onsuccess = function(event) {
+                                        console.log('Data added:', event.target.result);
+                                    };
+                                }
+                                request.onerror = function(event) {
+                                    console.log('Data error:', event.target.errorCode);
+                                };
+                            }
+                        }
+                        // if there is only one row of data, add it
+                        else {
+                            let request = objectStore.add(JSON.parse(data));
+                            request.onsuccess = function(event) {
+                                console.log('Data added:', event.target.result);
+                                next();
+                            };
+                            request.onerror = function(event) {
+                                console.log('Data error:', event.target.errorCode);
+                            };
+                        }
                     };
+                }).then(() => {
+                    // return true if successful
+                    return true;
                 }).catch((error) => {
                     console.error('Error:', error);
+                    return false;
                 });
             }
-            fetchUserData('/userdata', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]]);
-            fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false], ['location_id', false], ['record_type', false], ['notes', false]]);
+            // call fetchUserData for each object store in sequence
+            fetchUserData('/userdata', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]], () => {
+            fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false], ['location_id', false], ['record_type', false], ['notes', false]], () => {
+            fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [], () => {
+            fetchUserData('/patientdata', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
+            console.log('All data fetched and stored.');
+            this.submit();});});});});
+            // log event
+            console.log('Awaiting request completion...');
+            // prevent default form submission
             return false;
         ">
             <md-outlined-text-field name="username" label="Username" type="text" required>
