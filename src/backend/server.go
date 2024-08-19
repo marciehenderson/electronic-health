@@ -354,13 +354,12 @@ func dbHandler(data dbData) interface{} {
 					rowstr += ","
 				}
 			}
-			rowstr += "}"
+			rowstr += "},"
+			// fmt.Println(rowstr)
 			output += rowstr
-			// add commas between rows, but not at the end
-			if rows.Next() {
-				output += ","
-			}
 		}
+		// remove trailing comma
+		output = strings.TrimSuffix(output, ",")
 		// fmt.Println(output)
 		// Return results
 		return output
