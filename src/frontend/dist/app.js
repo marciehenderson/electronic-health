@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import '@material/web/icon/icon';
 import '@material/web/button/elevated-button';
 import '@material/web/list/list';
@@ -171,21 +180,22 @@ const accountView = () => {
     account.classList.add('view');
     document.getElementById('app').appendChild(account);
 };
-const actionsView = (subhash) => {
-    const record = [generateOptions('record_date', 'record_data'), generateOptions('patient_id', 'record_data')];
-    const patient = [generateOptions('patient_id', 'client_data'), generateOptions('last_name', 'patient_data'), generateOptions('first_name', 'patient_data')];
-    const actions = document.createElement('div');
-    actions.innerHTML = `
+function actionsView(subhash) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const record = [yield generateOptions('record_date', 'record'), yield generateOptions('patient_id', 'record')];
+        const patient = [yield generateOptions('patient_id', 'client'), yield generateOptions('last_name', 'patient'), yield generateOptions('first_name', 'patient')];
+        const actions = document.createElement('div');
+        actions.innerHTML = `
         <md-tabs>
             <md-secondary-tab role="button" onclick="window.location.hash='actions+create'" id="create">Create</md-secondary-tab>
             <md-secondary-tab role="button" onclick="window.location.hash='actions+modify'" id="modify">Modify</md-secondary-tab>
             <md-secondary-tab role="button" onclick="window.location.hash='actions+view'" id="view">View</md-secondary-tab>
         </md-tabs>
     `;
-    actions.classList.add('view');
-    document.getElementById('app').appendChild(actions);
-    const actionsSubView = document.createElement('div');
-    var actionFormInner = `
+        actions.classList.add('view');
+        document.getElementById('app').appendChild(actions);
+        const actionsSubView = document.createElement('div');
+        var actionFormInner = `
         <div class="view-top-padding"></div>
         <form class="view-input-container" action="/action" method="post">
             <md-outlined-select name="patient_id" label="Patient ID" id="patient_id" type="text" required onchange="
@@ -204,21 +214,21 @@ const actionsView = (subhash) => {
             ">
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
-    for (let i = 0; i < patient[0].length; i++) {
-        let value = patient[0][i] + ': ' + patient[1][i] + ', ' + patient[2][i];
-        actionFormInner += `
+        for (let i = 0; i < patient[0].length; i++) {
+            let value = patient[0][i] + ': ' + patient[1][i] + ', ' + patient[2][i];
+            actionFormInner += `
             <md-select-option value="${patient[0][i]}">
                 <div slot="headline">${value}</div>
             </md-select-option>
         `;
-    }
-    actionFormInner += `
+        }
+        actionFormInner += `
             </md-outlined-select>
     `;
-    switch (subhash) {
-        default:
-        case 'create':
-            actionFormInner = `
+        switch (subhash) {
+            default:
+            case 'create':
+                actionFormInner = `
                 <div class="action-indicator-bar">
                     <div class="action-indicator"></div>
                     <div></div>
@@ -249,9 +259,9 @@ const actionsView = (subhash) => {
                 <md-outlined-text-field name="notes" label="Notes" type="textarea">
                 </md-outlined-text-field>
             `;
-            break;
-        case 'modify':
-            actionFormInner = `
+                break;
+            case 'modify':
+                actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div class="action-indicator"></div>
@@ -266,20 +276,20 @@ const actionsView = (subhash) => {
                         <div slot="headline"></div>
                     </md-select-option>
             `;
-            for (let i = 0; i < record[0].length; i++) {
-                actionFormInner += `
+                for (let i = 0; i < record[0].length; i++) {
+                    actionFormInner += `
                     <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
-            }
-            actionFormInner += `
+                }
+                actionFormInner += `
                 </md-outlined-select>
                 <div id="form-generated-container"></div>
             `;
-            break;
-        case 'view':
-            actionFormInner = `
+                break;
+            case 'view':
+                actionFormInner = `
                 <div class="action-indicator-bar">
                     <div></div>
                     <div></div>
@@ -294,35 +304,37 @@ const actionsView = (subhash) => {
                         <div slot="headline"></div>
                     </md-select-option>
             `;
-            for (let i = 0; i < record[0].length; i++) {
-                actionFormInner += `
+                for (let i = 0; i < record[0].length; i++) {
+                    actionFormInner += `
                     <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
                         <div slot="headline">${record[0][i]}</div>
                     </md-select-option>
                 `;
-            }
-            actionFormInner += `
+                }
+                actionFormInner += `
                 </md-outlined-select>
                 <div id="form-generated-container"></div>
             `;
-            break;
-    }
-    ;
-    if (subhash !== 'view') {
-        actionFormInner += `
+                break;
+        }
+        ;
+        if (subhash !== 'view') {
+            actionFormInner += `
             <md-elevated-button type="submit">Submit</md-elevated-button>
         </form>
     `;
-    }
-    else {
-        actionFormInner += `
+        }
+        else {
+            actionFormInner += `
             </form>
         `;
-    }
-    actionsSubView.innerHTML = actionFormInner;
-    actionsSubView.classList.add('subview');
-    document.getElementsByClassName('view')[0].appendChild(actionsSubView);
-};
+        }
+        actionsSubView.innerHTML = actionFormInner;
+        actionsSubView.classList.add('subview');
+        document.getElementsByClassName('view')[0].appendChild(actionsSubView);
+    });
+}
+;
 const supportView = () => {
     const support = document.createElement('div');
     support.innerHTML = `
@@ -354,17 +366,42 @@ const setIndicator = (hash, id) => {
         indicator.classList.add('view-indicator');
     }
 };
-const generateOptions = (column, cookie) => {
-    const cookies = `; ${document.cookie};`;
-    const dIndex = cookies.indexOf(`; ${cookie}=`) + 1;
-    const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
-    let options = [];
-    data.forEach((row) => {
-        const cIndex = row.indexOf(`${column}=`);
-        options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
+function generateOptions(column, store) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let db = indexedDB.open('user_data');
+        let options = [];
+        db.onsuccess = function (event) {
+            let db = event.target.result;
+            let objectStore = db.transaction(store, 'readonly').objectStore(store);
+            let data = [];
+            objectStore.openCursor().onsuccess = function (event) {
+                let cursor = event.target.result;
+                if (cursor) {
+                    data.push(JSON.stringify(cursor.value));
+                    cursor.continue();
+                }
+                if (Array.isArray(data)) {
+                    data.forEach((row) => {
+                        console.log(row);
+                        const cIndex = row.indexOf(`{\"${column}\":\"`);
+                        options.push(row.substring(cIndex, row.indexOf('\"},', cIndex)).substring(column.length + 1));
+                    });
+                }
+                else {
+                    console.log('error: data is not an array');
+                }
+            };
+            objectStore.openCursor().onerror = function (event) {
+                console.log('Database error: ' + event.target.errorCode);
+            };
+        };
+        db.onerror = function (event) {
+            console.log('Database error: ' + event.target.errorCode);
+            return [];
+        };
+        return options;
     });
-    return options;
-};
+}
 const showView = (hash) => {
     document.getElementById('app').innerHTML = '';
     var subhash = hash.split('+')[1];

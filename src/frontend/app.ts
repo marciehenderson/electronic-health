@@ -177,10 +177,10 @@ const accountView = (): void => {
     document.getElementById('app')!.appendChild(account);
 };
 // Actions View - Create, Modify, View Records
-const actionsView = (subhash: string): void => {
+async function actionsView(subhash: string): Promise<void> {
     // Set dropdown options based on database records
-    const record = [generateOptions('record_date','record_data'), generateOptions('patient_id','record_data')];
-    const patient = [generateOptions('patient_id','client_data'), generateOptions('last_name','patient_data'), generateOptions('first_name','patient_data')];
+    const record = [await generateOptions('record_date','record'), await generateOptions('patient_id','record')];
+    const patient = [await generateOptions('patient_id','client'), await generateOptions('last_name','patient'), await generateOptions('first_name','patient')];
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -375,19 +375,42 @@ const setIndicator = (hash: string, id: string): void => {
     }
 }
 // Generate dropdown options based on database records
-const generateOptions = (column: string, cookie: string): string[] => {
-    // fetch options from database
-    const cookies = `; ${document.cookie};`;
-    // get all data from specified cookie
-    const dIndex = cookies.indexOf(`; ${cookie}=`) + 1;
-    // store each row of data as an element in an array
-    const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
-    // get all instances of the specified column
+async function generateOptions(column: string, store: string): Promise<string[]> {
+    // fetch options from indexedDB
+    let db = indexedDB.open('user_data');
+    // get all data from specified object store and generate options strings
     let options: string[] = [];
-    data.forEach((row: string) => {
-        const cIndex = row.indexOf(`${column}=`);
-        options.push(row.substring(cIndex, row.indexOf(',', cIndex)).substring(column.length + 1));
-    });
+    db.onsuccess = function(event: any) {
+        let db = (event as any).target.result;
+        let objectStore = db.transaction(store, 'readonly').objectStore(store);
+        let data: string[] = [];
+        // iterate through all data and add to array
+        objectStore.openCursor().onsuccess = function(event: any) {
+            let cursor = event.target.result;
+            if (cursor) {
+                data.push(JSON.stringify(cursor.value));
+                cursor.continue();
+            }
+            if (Array.isArray(data)) {
+                data.forEach((row: string) => {
+                    console.log(row);
+                    const cIndex = row.indexOf(`{\"${column}\":\"`);
+                    options.push(row.substring(cIndex, row.indexOf('\"},', cIndex)).substring(column.length + 1));
+                });
+            } else {
+                console.log('error: data is not an array');
+            }
+        };
+        // if there is an error log it
+        objectStore.openCursor().onerror = function(event: any) {
+            console.log('Database error: ' + event.target.errorCode);
+        }
+    };
+    // if there is an error, return an empty array
+    db.onerror = function(event: any) {
+        console.log('Database error: ' + event.target.errorCode);
+        return [];
+    };
     return options;
 }
 // Call for views based on requested path
