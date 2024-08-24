@@ -181,6 +181,8 @@ async function actionsView(subhash: string): Promise<void> {
     // Set dropdown options based on database records
     const record = [await generateOptions('record_date','record'), await generateOptions('patient_id','record')];
     const patient = [await generateOptions('patient_id','client'), await generateOptions('last_name','patient'), await generateOptions('first_name','patient')];
+    console.log('Record Options:', record);
+    console.log('Patient Options:', patient);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -383,23 +385,21 @@ async function generateOptions(column: string, store: string): Promise<string[]>
     db.onsuccess = function(event: any) {
         let db = (event as any).target.result;
         let objectStore = db.transaction(store, 'readonly').objectStore(store);
-        let data: string[] = [];
+        let row: string;
         // iterate through all data and add to array
         objectStore.openCursor().onsuccess = function(event: any) {
             let cursor = event.target.result;
             if (cursor) {
-                data.push(JSON.stringify(cursor.value));
+                row = JSON.stringify(cursor.value);
                 cursor.continue();
             }
-            if (Array.isArray(data)) {
-                data.forEach((row: string) => {
-                    console.log(row);
-                    const cIndex = row.indexOf(`{\"${column}\":\"`);
-                    options.push(row.substring(cIndex, row.indexOf('\"},', cIndex)).substring(column.length + 1));
-                });
-            } else {
-                console.log('error: data is not an array');
-            }
+            // console.log(row);
+            const cIndex = row.indexOf(`\"${column}\":\"`);
+            // get the index for the value
+            // column.length + 5, accounts for the column name and special characters
+            const vIndex = row.indexOf('\"', cIndex + column.length + 4);
+            const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
+            options.push(rowVal);
         };
         // if there is an error log it
         objectStore.openCursor().onerror = function(event: any) {
@@ -411,6 +411,7 @@ async function generateOptions(column: string, store: string): Promise<string[]>
         console.log('Database error: ' + event.target.errorCode);
         return [];
     };
+    // console.log(column + " - " + options);
     return options;
 }
 // Call for views based on requested path

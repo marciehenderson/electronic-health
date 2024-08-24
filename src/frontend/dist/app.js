@@ -184,6 +184,8 @@ function actionsView(subhash) {
     return __awaiter(this, void 0, void 0, function* () {
         const record = [yield generateOptions('record_date', 'record'), yield generateOptions('patient_id', 'record')];
         const patient = [yield generateOptions('patient_id', 'client'), yield generateOptions('last_name', 'patient'), yield generateOptions('first_name', 'patient')];
+        console.log('Record Options:', record);
+        console.log('Patient Options:', patient);
         const actions = document.createElement('div');
         actions.innerHTML = `
         <md-tabs>
@@ -373,23 +375,17 @@ function generateOptions(column, store) {
         db.onsuccess = function (event) {
             let db = event.target.result;
             let objectStore = db.transaction(store, 'readonly').objectStore(store);
-            let data = [];
+            let row;
             objectStore.openCursor().onsuccess = function (event) {
                 let cursor = event.target.result;
                 if (cursor) {
-                    data.push(JSON.stringify(cursor.value));
+                    row = JSON.stringify(cursor.value);
                     cursor.continue();
                 }
-                if (Array.isArray(data)) {
-                    data.forEach((row) => {
-                        console.log(row);
-                        const cIndex = row.indexOf(`{\"${column}\":\"`);
-                        options.push(row.substring(cIndex, row.indexOf('\"},', cIndex)).substring(column.length + 1));
-                    });
-                }
-                else {
-                    console.log('error: data is not an array');
-                }
+                const cIndex = row.indexOf(`\"${column}\":\"`);
+                const vIndex = row.indexOf('\"', cIndex + column.length + 4);
+                const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
+                options.push(rowVal);
             };
             objectStore.openCursor().onerror = function (event) {
                 console.log('Database error: ' + event.target.errorCode);
