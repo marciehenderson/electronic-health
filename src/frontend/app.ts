@@ -177,12 +177,12 @@ const accountView = (): void => {
     document.getElementById('app')!.appendChild(account);
 };
 // Actions View - Create, Modify, View Records
-async function actionsView(subhash: string): Promise<void> {
+async function actionsView(subhash: string) {
     // Set dropdown options based on database records
-    const record = [await generateOptions('record_date','record'), await generateOptions('patient_id','record')];
-    const patient = [await generateOptions('patient_id','client'), await generateOptions('last_name','patient'), await generateOptions('first_name','patient')];
-    console.log('Record Options:', record);
-    console.log('Patient Options:', patient);
+    let record = await Promise.all([generateOptions('record_date','record'), generateOptions('patient_id','record')]);
+    let patient = await Promise.all([generateOptions('patient_id','client'), generateOptions('last_name','patient'), generateOptions('first_name','patient')]);
+    // console.log('Record Options:', record);
+    // console.log('Patient Options:', patient);
     const actions = document.createElement('div');
     actions.innerHTML = `
         <md-tabs>
@@ -381,38 +381,44 @@ async function generateOptions(column: string, store: string): Promise<string[]>
     // fetch options from indexedDB
     let db = indexedDB.open('user_data');
     // get all data from specified object store and generate options strings
-    let options: string[] = [];
-    db.onsuccess = function(event: any) {
-        let db = (event as any).target.result;
-        let objectStore = db.transaction(store, 'readonly').objectStore(store);
-        let row: string;
-        // iterate through all data and add to array
-        objectStore.openCursor().onsuccess = function(event: any) {
-            let cursor = event.target.result;
-            if (cursor) {
-                row = JSON.stringify(cursor.value);
-                cursor.continue();
-            }
-            // console.log(row);
-            const cIndex = row.indexOf(`\"${column}\":\"`);
-            // get the index for the value
-            // column.length + 5, accounts for the column name and special characters
-            const vIndex = row.indexOf('\"', cIndex + column.length + 4);
-            const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
-            options.push(rowVal);
+    let promise = new Promise<string[]>((resolve, reject) => {
+        let options: string[] = [];
+        db.onsuccess = function(event: any) {
+            let db = (event as any).target.result;
+            let objectStore = db.transaction(store, 'readonly').objectStore(store);
+            let row: string;
+            // iterate through all data and add to array
+            objectStore.openCursor().onsuccess = function(event: any) {
+                let cursor = event.target.result;
+                if (cursor) {
+                    row = JSON.stringify(cursor.value);
+                    cursor.continue();
+                }
+                // console.log(row);
+                const cIndex = row.indexOf(`\"${column}\":\"`);
+                // get the index for the value
+                // column.length + 5, accounts for the column name and special characters
+                const vIndex = row.indexOf('\"', cIndex + column.length + 4);
+                const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
+                options.push(rowVal);
+                // if the cursor is null, resolve the promise
+                if (cursor === null) {
+                    resolve(options);
+                }
+            };
+            // if there is an error log it
+            objectStore.openCursor().onerror = function(event: any) {
+                console.log('Database error: ' + event.target.errorCode);
+                reject([]);
+            };
         };
-        // if there is an error log it
-        objectStore.openCursor().onerror = function(event: any) {
+        // if there is an error, return an empty array
+        db.onerror = function(event: any) {
             console.log('Database error: ' + event.target.errorCode);
-        }
-    };
-    // if there is an error, return an empty array
-    db.onerror = function(event: any) {
-        console.log('Database error: ' + event.target.errorCode);
-        return [];
-    };
-    // console.log(column + " - " + options);
-    return options;
+            reject([]);
+        };
+    });
+    return promise;
 }
 // Call for views based on requested path
 const showView = (hash: string): void => {

@@ -182,10 +182,8 @@ const accountView = () => {
 };
 function actionsView(subhash) {
     return __awaiter(this, void 0, void 0, function* () {
-        const record = [yield generateOptions('record_date', 'record'), yield generateOptions('patient_id', 'record')];
-        const patient = [yield generateOptions('patient_id', 'client'), yield generateOptions('last_name', 'patient'), yield generateOptions('first_name', 'patient')];
-        console.log('Record Options:', record);
-        console.log('Patient Options:', patient);
+        let record = yield Promise.all([generateOptions('record_date', 'record'), generateOptions('patient_id', 'record')]);
+        let patient = yield Promise.all([generateOptions('patient_id', 'client'), generateOptions('last_name', 'patient'), generateOptions('first_name', 'patient')]);
         const actions = document.createElement('div');
         actions.innerHTML = `
         <md-tabs>
@@ -371,31 +369,37 @@ const setIndicator = (hash, id) => {
 function generateOptions(column, store) {
     return __awaiter(this, void 0, void 0, function* () {
         let db = indexedDB.open('user_data');
-        let options = [];
-        db.onsuccess = function (event) {
-            let db = event.target.result;
-            let objectStore = db.transaction(store, 'readonly').objectStore(store);
-            let row;
-            objectStore.openCursor().onsuccess = function (event) {
-                let cursor = event.target.result;
-                if (cursor) {
-                    row = JSON.stringify(cursor.value);
-                    cursor.continue();
-                }
-                const cIndex = row.indexOf(`\"${column}\":\"`);
-                const vIndex = row.indexOf('\"', cIndex + column.length + 4);
-                const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
-                options.push(rowVal);
+        let promise = new Promise((resolve, reject) => {
+            let options = [];
+            db.onsuccess = function (event) {
+                let db = event.target.result;
+                let objectStore = db.transaction(store, 'readonly').objectStore(store);
+                let row;
+                objectStore.openCursor().onsuccess = function (event) {
+                    let cursor = event.target.result;
+                    if (cursor) {
+                        row = JSON.stringify(cursor.value);
+                        cursor.continue();
+                    }
+                    const cIndex = row.indexOf(`\"${column}\":\"`);
+                    const vIndex = row.indexOf('\"', cIndex + column.length + 4);
+                    const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
+                    options.push(rowVal);
+                    if (cursor === null) {
+                        resolve(options);
+                    }
+                };
+                objectStore.openCursor().onerror = function (event) {
+                    console.log('Database error: ' + event.target.errorCode);
+                    reject([]);
+                };
             };
-            objectStore.openCursor().onerror = function (event) {
+            db.onerror = function (event) {
                 console.log('Database error: ' + event.target.errorCode);
+                reject([]);
             };
-        };
-        db.onerror = function (event) {
-            console.log('Database error: ' + event.target.errorCode);
-            return [];
-        };
-        return options;
+        });
+        return promise;
     });
 }
 const showView = (hash) => {
