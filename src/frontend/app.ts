@@ -77,7 +77,6 @@ const accountView = (): void => {
         <form class="view-input-container" action="/login" method="post" onsubmit="
             // asynchronous function to fetch user data and store in indexedDB
             async function fetchUserData(req, form, ver, store, key, index, next) {
-                console.log('Fetching user data from: ' + req + '...');
                 const options = {
                     method: 'get',
                     headers: {
@@ -91,7 +90,6 @@ const accountView = (): void => {
                         throw new Error('HTTP error: ' + response.status);
                     }
                     let json = response.json();
-                    console.log('Response:', json);
                     return json;
                 }).then((data) => {
                     // store user data with indexedDB
@@ -109,7 +107,6 @@ const accountView = (): void => {
                     request.onsuccess = function(event) {
                         let db = event.target.result;
                         let objectStore = db.transaction(store, 'readwrite').objectStore(store);
-                        console.log('Adding data:', data);
                         // if there is more than one row of data, split and add each row individually
                         if (data.includes('},{')) {
                             data = data.split('},');
@@ -121,12 +118,11 @@ const accountView = (): void => {
                                 // if this is the last row of data, call next
                                 if (i === data.length-1) {
                                     request.onsuccess = function(event) {
-                                        console.log('Data added:', event.target.result);
                                         next();
                                     };
                                 } else {
                                     request.onsuccess = function(event) {
-                                        console.log('Data added:', event.target.result);
+                                        // console.log('Data added:', event.target.result);
                                     };
                                 }
                                 request.onerror = function(event) {
@@ -138,7 +134,6 @@ const accountView = (): void => {
                         else {
                             let request = objectStore.add(JSON.parse(data));
                             request.onsuccess = function(event) {
-                                console.log('Data added:', event.target.result);
                                 next();
                             };
                             request.onerror = function(event) {
@@ -159,10 +154,7 @@ const accountView = (): void => {
             fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false], ['location_id', false], ['record_type', false], ['notes', false]], () => {
             fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [], () => {
             fetchUserData('/patientdata', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
-            console.log('All data fetched and stored.');
             this.submit();});});});});
-            // log event
-            console.log('Awaiting request completion...');
             // prevent default form submission
             return false;
         ">
@@ -386,28 +378,27 @@ async function generateOptions(column: string, store: string): Promise<string[]>
         db.onsuccess = function(event: any) {
             let db = (event as any).target.result;
             let objectStore = db.transaction(store, 'readonly').objectStore(store);
+            let request = objectStore.openCursor(null, 'nextunique');
             let row: string;
             // iterate through all data and add to array
-            objectStore.openCursor().onsuccess = function(event: any) {
+            request.onsuccess = function(event: any) {
                 let cursor = event.target.result;
                 if (cursor) {
                     row = JSON.stringify(cursor.value);
+                    const cIndex = row.indexOf(`\"${column}\":\"`);
+                    // get the index for the value
+                    // column.length + 4, accounts for the column name and special characters
+                    const vIndex = row.indexOf('\"', cIndex + column.length + 4);
+                    const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
+                    options.push(rowVal);
                     cursor.continue();
-                }
-                // console.log(row);
-                const cIndex = row.indexOf(`\"${column}\":\"`);
-                // get the index for the value
-                // column.length + 5, accounts for the column name and special characters
-                const vIndex = row.indexOf('\"', cIndex + column.length + 4);
-                const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
-                options.push(rowVal);
-                // if the cursor is null, resolve the promise
-                if (cursor === null) {
+                } else {
+                    // if there are no more entries, resolve the promise
                     resolve(options);
                 }
             };
             // if there is an error log it
-            objectStore.openCursor().onerror = function(event: any) {
+            request.onerror = function(event: any) {
                 console.log('Database error: ' + event.target.errorCode);
                 reject([]);
             };
