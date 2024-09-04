@@ -125,7 +125,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			username := strings.Split(string(cred), ":")[0]
 			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
-			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id", "practitioner_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 			// convert client data to json format
 			jsonData, err := json.Marshal(clientData)
 			if err != nil {
@@ -184,6 +184,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Parse action form data
 			r.ParseForm()
 			subHash := "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "basic")
+			practitionerID := inputValidation(r.Form.Get("practitioner_id"), "basic")
 			patientID := inputValidation(r.Form.Get("patient_id"), "basic")
 			locationID := inputValidation(r.Form.Get("location_id"), "basic")
 			recordDate := inputValidation(r.Form.Get("record_date"), "datetime")
@@ -193,7 +194,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			switch subHash {
 			case "/#actions+create":
 				// create new record
-				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, locationID, recordType, notes}})
+				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "practitioner_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, practitionerID, locationID, recordType, notes}})
 			case "/#actions+modify":
 				// modify existing record
 				if locationID != "" && recordType != "" && notes != "" {

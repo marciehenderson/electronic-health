@@ -156,7 +156,7 @@ const accountView = () => {
             // call fetchUserData for each object store in sequence
             fetchUserData('/userdata', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]], () => {
             fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false], ['location_id', false], ['record_type', false], ['notes', false]], () => {
-            fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [], () => {
+            fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [['practitioner_id', false]], () => {
             fetchUserData('/patientdata', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
             this.submit();});});});});
             // prevent default form submission
@@ -189,20 +189,45 @@ function actionsView(subhash) {
         const actionsSubView = document.createElement('div');
         var actionFormInner = `
         <div class="view-top-padding"></div>
-        <form class="view-input-container" action="/action" method="post">
+        <form class="view-input-container" action="/action" method="post" onsubmit="
+            if (document.getElementById('practitioner_id')) {
+                let getUserID = (form) => {
+                    // get value of practioner_id from indexedDB
+                    db = indexedDB.open('user_data');
+                    db.onsuccess = function(event) {
+                        let db = event.target.result;
+                        let objectStore = db.transaction('client', 'readonly').objectStore('client');
+                        let request = objectStore.get(document.getElementById('patient_id').value);
+                        request.onsuccess = function(event) {
+                            let practitioner = event.target.result; // is undefined currently
+                            document.getElementById('practitioner_id').value = practitioner.practitioner_id;
+                            form.submit();
+                        };
+                        request.onerror = function(event) {
+                            console.log('Database error: ' + event.target.errorCode);
+                        };
+                    };
+                }
+                getUserID(this);
+                return false;
+            }
+        ">
             <md-outlined-select name="patient_id" label="Patient ID" id="patient_id" type="text" required onchange="
                 let patient = document.getElementById('patient_id').value;
-                let records = document.getElementsByClassName('date-option');
-                for (let i=0; i<records.length; i++) {
-                    let record = records[i];
-                    if (record.id.includes('pid-'+patient+'-')) {
-                        record.style.display = 'block';
-                    } else if (!record.id.includes('default')) {
-                        record.style.display = 'none';
+                // only if the record_date element exists
+                if (document.getElementById('record_date')) {
+                    let records = document.getElementsByClassName('date-option');
+                    for (let i=0; i<records.length; i++) {
+                        let record = records[i];
+                        if (record.id.includes('pid-'+patient+'-')) {
+                            record.style.display = 'block';
+                        } else if (!record.id.includes('default')) {
+                            record.style.display = 'none';
+                        }
                     }
+                    let recordDate = document.getElementById('record_date');
+                    recordDate.selectedIndex = 0;
                 }
-                let recordDate = document.getElementById('record_date');
-                recordDate.selectedIndex = 0;
             ">
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
@@ -228,6 +253,7 @@ function actionsView(subhash) {
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" type="text" value="create" style="display: none;"></input>
+                <input name="practitioner_id" id="practitioner_id" type="text" value="" style="display: none;"></input>
                 <md-outlined-text-field name="location_id" label="Location ID" type="text" required>
                     <md-icon slot="trailing-icon">search</md-icon>
                 </md-outlined-text-field>
