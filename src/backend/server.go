@@ -105,7 +105,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			username := strings.Split(string(cred), ":")[0]
 			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
-			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id", "location_id", "record_type", "notes"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
+			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 			// convert record data to json format
 			jsonData, err := json.Marshal(recordData)
 			if err != nil {
@@ -183,11 +183,30 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/action" {
 			// Parse action form data
 			r.ParseForm()
+			// get body content
+			body := make([]byte, r.ContentLength)
+			r.Body.Read(body)
+			// get form data
 			subHash := "/#actions+" + inputValidation(r.Form.Get("sub_hash"), "basic")
+			if subHash == "/#actions+" {
+				// find subhash in body and append to subHash string
+				subHash += inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"sub_hash\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "basic")
+				// fmt.Println(subHash)
+			}
 			practitionerID := inputValidation(r.Form.Get("practitioner_id"), "basic")
 			patientID := inputValidation(r.Form.Get("patient_id"), "basic")
+			if patientID == "" {
+				// find patient_id in body and assign value to patientID
+				patientID = inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"patient_id\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "basic")
+				// fmt.Println(patientID)
+			}
 			locationID := inputValidation(r.Form.Get("location_id"), "basic")
 			recordDate := inputValidation(r.Form.Get("record_date"), "datetime")
+			if recordDate == "" {
+				// find record_date in body and assign value to recordDate
+				recordDate = inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"record_date\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "datetime")
+				// fmt.Println(recordDate)
+			}
 			recordType := inputValidation(r.Form.Get("record_type"), "basic")
 			notes := inputValidation(r.Form.Get("notes"), "basic")
 			// Query database based on action sub-hash
@@ -195,22 +214,27 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			case "/#actions+create":
 				// create new record
 				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "practitioner_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, practitionerID, locationID, recordType, notes}})
+				w.Header().Set("Content-Type", "text/html")
+				http.Redirect(w, r, subHash, http.StatusSeeOther)
 			case "/#actions+modify":
 				// modify existing record
 				if locationID != "" && recordType != "" && notes != "" {
 					dbHandler(dbData{query: "modify", table: "record", cols: []string{"location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{locationID, recordType, notes}})
 				}
-				// dbHandler(dbData{query: "modify", table: "record", cols: []string{editValue}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{"placeholder_repacement_value"}})
+				w.Header().Set("Content-Type", "text/html")
+				http.Redirect(w, r, subHash, http.StatusSeeOther)
 			case "/#actions+view":
 				// view existing record
-				value := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
-				// set cookie for currently requested record
-				cookie := http.Cookie{Name: "record_view", Value: value.(string), Path: "/", SameSite: http.SameSiteStrictMode, Secure: true, HttpOnly: false}
-				http.SetCookie(w, &cookie)
+				recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
+				// respond to request with record data in json format
+				jsonData, err := json.Marshal(recordData)
+				if err != nil {
+					fmt.Println(err)
+				}
+				// fmt.Println(string(jsonData))
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(jsonData)
 			}
-			// reload action page
-			w.Header().Set("Content-Type", "text/html")
-			http.Redirect(w, r, subHash, http.StatusSeeOther)
 		}
 	default:
 		// Handle all other requests - Not implemented

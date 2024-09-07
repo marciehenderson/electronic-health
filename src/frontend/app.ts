@@ -16,13 +16,28 @@ const FORM_GENERATED_CONTAINER_SCRIPT_START = `\
 let patient = document.getElementById('patient_id');
 let record = document.getElementById('record_date');
 if (patient.value !== '-1' && record.value !== '-1') {
-    let xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() {
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-            const cookies = '; ' + document.cookie + ';';
-            const dIndex = cookies.indexOf('; record_view=') + 1;
-            const data = cookies.substring(dIndex, cookies.indexOf(';', dIndex)).split('],[');
-            let form = data[0].substring(15, data[0].length-3).split(',');
+    let fetchRecord = async (patient_id, record_date) => {
+        let sub_hash = 'view';
+        let formData = new FormData();
+        formData.append('sub_hash', sub_hash);
+        formData.append('patient_id', patient_id);
+        formData.append('record_date', record_date);
+        await fetch('/action', {
+            method: 'post',
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            body: formData
+        }).then((response) => {
+            if (!response.ok) {
+                throw new Error('HTTP error: ' + response.status);
+            }
+            console.log('Response:', response);
+            let json = response.json();
+            console.log('JSON:', json);
+            return json;
+        }).then((json) => {
+            let data = String(json).split(',');
             document.getElementById('form-generated-container').innerHTML = 
             '<table>\
                 <tr>\
@@ -33,39 +48,36 @@ if (patient.value !== '-1' && record.value !== '-1') {
                     <th>Notes</th>\
                 </tr>\
 `;
-const FORM_GENERATED_CONTAINER_SCRIPT_END = `\
-    xmlHttp.open('POST', '/action', true);
-    xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    xmlHttp.send('sub_hash=view&patient_id='+patient.value+'&record_date='+record.value);
-}
-`;
-const FORM_GENERATED_CONTAINER_SCRIPT_VIEW = FORM_GENERATED_CONTAINER_SCRIPT_START + `\
-                <tr>\
-                    <td>'+form[0].replace('patient_id=','')+'</td>\
-                    <td>'+form[1].replace('record_date=','')+'</td>\
-                    <td>'+form[2].replace('location_id=','')+'</td>\
-                    <td>'+form[3].replace('record_type=','')+'</td>\
-                    <td>'+form[4].replace('notes=','')+'</td>\
-                </tr>\
-            </table>';
-        }
+const FORM_GENERATED_CONTAINER_SCRIPT_END = `
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
     }
+    fetchRecord(patient.value, record.value);
+}`;
+const FORM_GENERATED_CONTAINER_SCRIPT_VIEW = FORM_GENERATED_CONTAINER_SCRIPT_START + `\
+        <tr>\
+            <td>'+data[0].substring(data[0].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td>'+data[1].substring(data[1].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td>'+data[2].substring(data[2].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td>'+data[3].substring(data[3].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td>'+data[4].substring(data[4].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '').replace('}', '')+'</td>\
+        </tr>\
+    </table>';
 ` + FORM_GENERATED_CONTAINER_SCRIPT_END;
 const FORM_GENERATED_CONTAINER_SCRIPT_MODIFY = FORM_GENERATED_CONTAINER_SCRIPT_START + `\
-                <tr>\
-                    <td>'+form[0].replace('patient_id=','')+'</td>\
-                    <td>'+form[1].replace('record_date=','')+'</td>\
-                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;location_id&quot; id=&quot;location_id&quot;></textarea></td>\
-                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;record_type&quot; id=&quot;record_type&quot;></textarea></td>\
-                    <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;notes&quot; id=&quot;notes&quot;></textarea></td>\
-                </tr>\
-            </table>';
-            let generatedInputs = document.getElementsByClassName('generated-input');
-            for (let i=0; i<generatedInputs.length; i++) {
-                let input = generatedInputs[i];
-                input.value = form[i+2].substring(form[i+2].indexOf('=')+1);
-            }
-        }
+        <tr>\
+            <td>'+data[0].substring(data[0].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td>'+data[1].substring(data[1].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '')+'</td>\
+            <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;location_id&quot; id=&quot;location_id&quot;></textarea></td>\
+            <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;record_type&quot; id=&quot;record_type&quot;></textarea></td>\
+            <td><textarea type=&quot;text&quot; class=&quot;generated-input&quot; name=&quot;notes&quot; id=&quot;notes&quot;></textarea></td>\
+        </tr>\
+    </table>';
+    let generatedInputs = document.getElementsByClassName('generated-input');
+    for (let i=0; i<generatedInputs.length; i++) {
+        let input = generatedInputs[i];
+        input.value = data[i+2].substring(data[i+2].indexOf(':')+1).replace(new RegExp('&quot;', 'g'), '').replace('}', '');
     }
 ` + FORM_GENERATED_CONTAINER_SCRIPT_END;
 // View Functions
@@ -151,7 +163,7 @@ const accountView = (): void => {
             }
             // call fetchUserData for each object store in sequence
             fetchUserData('/userdata', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]], () => {
-            fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false], ['location_id', false], ['record_type', false], ['notes', false]], () => {
+            fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false]], () => {
             fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [['practitioner_id', false]], () => {
             fetchUserData('/patientdata', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
             this.submit();});});});});
@@ -198,7 +210,7 @@ async function actionsView(subhash: string) {
                         let objectStore = db.transaction('client', 'readonly').objectStore('client');
                         let request = objectStore.get(document.getElementById('patient_id').value);
                         request.onsuccess = function(event) {
-                            let practitioner = event.target.result; // is undefined currently
+                            let practitioner = event.target.result;
                             document.getElementById('practitioner_id').value = practitioner.practitioner_id;
                             form.submit();
                         };
@@ -252,7 +264,7 @@ async function actionsView(subhash: string) {
                     <div></div>
                 </div>
             ` + actionFormInner + `
-                <input name="sub_hash" type="text" value="create" style="display: none;"></input>
+                <input name="sub_hash" id="sub_hash" type="text" value="create" style="display: none;"></input>
                 <input name="practitioner_id" id="practitioner_id" type="text" value="" style="display: none;"></input>
                 <md-outlined-text-field name="location_id" label="Location ID" type="text" required>
                     <md-icon slot="trailing-icon">search</md-icon>
@@ -287,7 +299,7 @@ async function actionsView(subhash: string) {
                     <div></div>
                 </div>
             ` + actionFormInner + `
-                <input name="sub_hash" type="text" value="modify" style="display: none;"></input>
+                <input name="sub_hash" id="sub_hash" type="text" value="modify" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
                     ${FORM_GENERATED_CONTAINER_SCRIPT_MODIFY}
                 ">
@@ -316,7 +328,7 @@ async function actionsView(subhash: string) {
                     <div class="action-indicator"></div>
                 </div>
             ` + actionFormInner + `
-                <input name="sub_hash" type="text" value="view" style="display: none;"></input>
+                <input name="sub_hash" id="sub_hash" type="text" value="view" style="display: none;"></input>
                 <md-outlined-select name="record_date" label="Record Date" id="record_date" type="text" required onchange="
                     ${FORM_GENERATED_CONTAINER_SCRIPT_VIEW}
                 ">
