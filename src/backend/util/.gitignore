@@ -1,0 +1,9 @@
+# Ignore all bash files
+*.sh
+# Ignore all go scripts
+*.go
+# Ignore all go .mod and .sum files
+*.mod
+*.sum
+# Ignore all subdirectories
+*/

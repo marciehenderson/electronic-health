@@ -14,7 +14,12 @@ import (
 	"unicode"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/gorilla/sessions"
 )
+
+// Session variables
+
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSIONKEY")))
 
 // Declare global variables
 var dbConfig = mysql.Config{
@@ -59,8 +64,27 @@ func main() {
 	log.Fatal(server.ListenAndServeTLS("", ""))
 }
 
-// Handle all requests to the server
+// Handle all requests to the server and all client-server sessions
 func appHandler(w http.ResponseWriter, r *http.Request) {
+	// Handle all client-server sessions
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Configure all new sessions
+	if session.IsNew {
+		session.Options = &sessions.Options{
+			Path:     "/",
+			MaxAge:   86400, // 1 day
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteDefaultMode,
+		}
+		session.Values["username"] = ""
+		session.Values["password"] = ""
+	}
+	// Handle all server requests
 	switch r.Method {
 	case "GET":
 		// Handle GET requests - Only serve explicitly allowed files
@@ -173,6 +197,9 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
 				fmt.Println("Login successful")
+				// Set user credentials to session values
+				session.Values["username"] = username
+				session.Values["password"] = password
 			} else {
 				fmt.Println("Login failed")
 			}
