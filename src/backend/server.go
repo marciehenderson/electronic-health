@@ -75,14 +75,21 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 	// Configure all new sessions
 	if session.IsNew {
 		session.Options = &sessions.Options{
+			Domain:   "localhost",
 			Path:     "/",
 			MaxAge:   86400, // 1 day
 			HttpOnly: true,
 			Secure:   true,
-			SameSite: http.SameSiteDefaultMode,
+			SameSite: http.SameSiteStrictMode,
 		}
+		// Initialize session values
 		session.Values["username"] = ""
 		session.Values["password"] = ""
+		err := session.Save(r, w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	// Handle all server requests
 	switch r.Method {
