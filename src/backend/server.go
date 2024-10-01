@@ -107,8 +107,14 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/css")
 			http.ServeFile(w, r, "../frontend/style.css")
 		}
+	case "POST":
+		// Handle POST requests
+		if r.URL.Path == "/login" {
+			// reload login page after login attempt
+			w.Header().Set("Content-Type", "text/html")
+			http.ServeFile(w, r, "../frontend/index.html")
+		}
 		if r.URL.Path == "/userdata" {
-			// respond to request with user data in json format
 			// get user data from database
 			auth := r.Header.Get("Authorization")
 			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
@@ -116,26 +122,41 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println(err)
 			}
 			username := strings.Split(string(cred), ":")[0]
+			password := strings.Split(string(cred), ":")[1]
+			// Note: not needed for anything but compatability with the frontend at the moment
 			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			// Query database for user credentials
+			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
+				fmt.Println("Login successful")
+				// Set user credentials to session values
+				session.Values["username"] = username
+				session.Values["password"] = password
+				// Set user id variable to session values
+				jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+				userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+				session.Values["userID"] = userID
+				// Save session values
+				err := session.Save(r, w)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				fmt.Println("Login failed")
+			}
 			// convert user data to json format
 			jsonData, err := json.Marshal(userData)
 			if err != nil {
 				fmt.Println(err)
 			}
+			// respond to request with user data in json format
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
 		}
 		if r.URL.Path == "/recorddata" {
 			// respond to request with record data in json format
 			// get record data from database
-			auth := r.Header.Get("Authorization")
-			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
-			if err != nil {
-				fmt.Println(err)
-			}
-			username := strings.Split(string(cred), ":")[0]
-			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+			userID := session.Values["userID"].(string)
 			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 			// convert record data to json format
 			jsonData, err := json.Marshal(recordData)
@@ -148,14 +169,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/clientdata" {
 			// respond to request with client data in json format
 			// get client data from database
-			auth := r.Header.Get("Authorization")
-			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
-			if err != nil {
-				fmt.Println(err)
-			}
-			username := strings.Split(string(cred), ":")[0]
-			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+			userID := session.Values["userID"].(string)
 			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id", "practitioner_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 			// convert client data to json format
 			jsonData, err := json.Marshal(clientData)
@@ -168,14 +182,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/patientdata" {
 			// respond to request with patient data in json format
 			// get patient data from database
-			auth := r.Header.Get("Authorization")
-			cred, err := base64.StdEncoding.DecodeString(strings.Split(auth, "Basic")[1])
-			if err != nil {
-				fmt.Println(err)
-			}
-			username := strings.Split(string(cred), ":")[0]
-			jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
-			userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
+			userID := session.Values["userID"].(string)
 			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
 			clientData = clientData.(string) + "," // append comma to end of string
 			patientIDs := []string{}
@@ -192,27 +199,6 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(jsonData)
-		}
-	case "POST":
-		// Handle POST requests
-		if r.URL.Path == "/login" {
-			// Parse login form data
-			r.ParseForm()
-			// Validate user credentials
-			username := inputValidation(r.Form.Get("username"), "basic")
-			password := inputValidation(r.Form.Get("password"), "basic")
-			// Query database for user credentials
-			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
-				fmt.Println("Login successful")
-				// Set user credentials to session values
-				session.Values["username"] = username
-				session.Values["password"] = password
-			} else {
-				fmt.Println("Login failed")
-			}
-			// reload account page
-			w.Header().Set("Content-Type", "text/html")
-			http.ServeFile(w, r, "../frontend/index.html")
 		}
 		if r.URL.Path == "/action" {
 			// Parse action form data

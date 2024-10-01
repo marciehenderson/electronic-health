@@ -94,7 +94,7 @@ const accountView = () => {
             // asynchronous function to fetch user data and store in indexedDB
             async function fetchUserData(req, form, ver, store, key, index, next) {
                 const options = {
-                    method: 'get',
+                    method: 'post',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Basic' + btoa(form.username.value + ':' + form.password.value)
