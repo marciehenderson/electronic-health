@@ -77,7 +77,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		session.Options = &sessions.Options{
 			Domain:   "localhost",
 			Path:     "/",
-			MaxAge:   86400, // 1 day
+			MaxAge:   0, // session persists only as long as the browser session continues
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
@@ -85,6 +85,11 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 		// Initialize session values
 		session.Values["username"] = ""
 		session.Values["password"] = ""
+		session.Values["authenticated"] = false
+		session.Values["userID"] = ""
+		session.Values["clientData"] = ""
+		session.Values["patientData"] = ""
+		session.Values["recordData"] = ""
 		err := session.Save(r, w)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -127,10 +132,10 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
-				fmt.Println("Login successful")
 				// Set user credentials to session values
 				session.Values["username"] = username
 				session.Values["password"] = password
+				session.Values["authenticated"] = true
 				// Set user id variable to session values
 				jsonID := dbHandler(dbData{query: "view", table: "user", cols: []string{"id"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
 				userID := strings.Split(strings.Split(jsonID.(string), ":\"")[1], "\"}")[0]
@@ -141,6 +146,8 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
+				// Log successful login
+				fmt.Println("Login successful")
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -154,53 +161,76 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write(jsonData)
 		}
 		if r.URL.Path == "/recorddata" {
+			// verify the session is authenticated
+			if session.Values["authenticated"] != true {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 			// respond to request with record data in json format
 			// get record data from database
 			userID := session.Values["userID"].(string)
 			recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-			// convert record data to json format
-			jsonData, err := json.Marshal(recordData)
+			// save record data to session values
+			session.Values["recordData"] = recordData
+			err := session.Save(r, w)
 			if err != nil {
-				fmt.Println(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonData)
+			// respond with ok status
+			w.WriteHeader(http.StatusOK)
 		}
 		if r.URL.Path == "/clientdata" {
+			// verify the session is authenticated
+			if session.Values["authenticated"] != true {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 			// respond to request with client data in json format
 			// get client data from database
 			userID := session.Values["userID"].(string)
 			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id", "practitioner_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-			// convert client data to json format
-			jsonData, err := json.Marshal(clientData)
+			// save client data to session values
+			session.Values["clientData"] = clientData
+			err := session.Save(r, w)
 			if err != nil {
-				fmt.Println(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonData)
+			// respond with ok status
+			w.WriteHeader(http.StatusOK)
 		}
 		if r.URL.Path == "/patientdata" {
+			// verify the session is authenticated
+			if session.Values["authenticated"] != true {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 			// respond to request with patient data in json format
 			// get patient data from database
-			userID := session.Values["userID"].(string)
-			clientData := dbHandler(dbData{query: "view", table: "client", cols: []string{"patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{userID}})
-			clientData = clientData.(string) + "," // append comma to end of string
+			clientData := session.Values["clientData"].(string) + ","
 			patientIDs := []string{}
-			data := strings.Split(clientData.(string), "{\"patient_id\":\"")
+			data := strings.Split(clientData, "{\"patient_id\":\"")
 			for i := 1; i < len(data); i++ {
 				patientID := strings.Split(data[i], "\"}")[0]
 				patientIDs = append(patientIDs, patientID)
 			}
 			patientData := dbHandler(dbData{query: "view", table: "patient", cols: []string{"id", "first_name", "last_name", "date_of_birth", "street_address", "contact_number", "email"}, keys: []string{"id"}, refs: []interface{}{patientIDs}})
-			// convert patient data to json format
-			jsonData, err := json.Marshal(patientData)
+			// save patient data to session values
+			session.Values["patientData"] = patientData
+			err := session.Save(r, w)
 			if err != nil {
-				fmt.Println(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonData)
+			w.WriteHeader(http.StatusOK)
 		}
 		if r.URL.Path == "/action" {
+			// verify the session is authenticated
+			if session.Values["authenticated"] != true {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 			// Parse action form data
 			r.ParseForm()
 			// get body content
@@ -213,7 +243,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				subHash += inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"sub_hash\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "basic")
 				// fmt.Println(subHash)
 			}
-			practitionerID := inputValidation(r.Form.Get("practitioner_id"), "basic")
+			practitionerID := session.Values["userID"].(string)
 			patientID := inputValidation(r.Form.Get("patient_id"), "basic")
 			if patientID == "" {
 				// find patient_id in body and assign value to patientID
@@ -246,15 +276,42 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			case "/#actions+view":
 				// view existing record
 				recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"patient_id", "record_date", "location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}})
-				// respond to request with record data in json format
 				jsonData, err := json.Marshal(recordData)
 				if err != nil {
 					fmt.Println(err)
 				}
-				// fmt.Println(string(jsonData))
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(jsonData)
 			}
+		}
+		if r.URL.Path == "/option" {
+			// verify the session is authenticated
+			if session.Values["authenticated"] != true {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			// get body content
+			body := make([]byte, r.ContentLength)
+			r.Body.Read(body)
+
+			// Note: need to get every instance of the variable and column in session.Values["<--variable-->"]
+
+			// get specified variable
+			variable := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "\"variable\":")[1], ",")[0], "\x0D", ""), "\x0A", ""), "basic"), "\\U+0022\\", ""), "\\U+005F\\", "_"), "\\U+007D\\", "")
+			// get specified column
+			column := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "\"column\":")[1], ",")[0], "\x0D", ""), "\x0A", ""), "basic"), "\\U+0022\\", ""), "\\U+005F\\", "_"), "\\U+007D\\", "")
+			// search for specified value in session.Values
+			value := session.Values[variable].(string)
+			// get only the value of the specified column from the value
+			value = strings.Split(strings.Split(value, column+"\":\"")[1], "\"}")[0]
+			// convert to json format
+			jsonData, err := json.Marshal(value)
+			if err != nil {
+				fmt.Println(err)
+			}
+			// respond with the value
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonData)
 		}
 	default:
 		// Handle all other requests - Not implemented

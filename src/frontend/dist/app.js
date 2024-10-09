@@ -92,7 +92,9 @@ const accountView = () => {
         <div class="view-top-padding"></div>
         <form class="view-input-container" action="/login" method="post" onsubmit="
             // asynchronous function to fetch user data and store in indexedDB
-            async function fetchUserData(req, form, ver, store, key, index, next) {
+            // req: request path, res: response expected, form: form reference, ver: indexedDB version, 
+            // store: object store name, key: key path, index: index array, next: next function
+            async function fetchUserData(req, res, form, ver, store, key, index, next) {
                 const options = {
                     method: 'post',
                     headers: {
@@ -105,9 +107,18 @@ const accountView = () => {
                     if (!response.ok) {
                         throw new Error('HTTP error: ' + response.status);
                     }
-                    let json = response.json();
-                    return json;
+                    if (res === 'json') {
+                        let json = response.json();
+                        return json;
+                    } else if (res === 'status') {
+                        return response.status;
+                    }
                 }).then((data) => {
+                    // check returned data type
+                    if (res !== 'json') {
+                        next();
+                        return true;
+                    }
                     // store user data with indexedDB
                     let request = indexedDB.open('user_data', ver);
                     request.onupgradeneeded = function(event) {
@@ -166,10 +177,10 @@ const accountView = () => {
                 });
             }
             // call fetchUserData for each object store in sequence
-            fetchUserData('/userdata', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]], () => {
-            fetchUserData('/recorddata', this, 2, 'record', 'record_date', [['patient_id', false]], () => {
-            fetchUserData('/clientdata', this, 3, 'client', 'patient_id', [['practitioner_id', false]], () => {
-            fetchUserData('/patientdata', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
+            fetchUserData('/userdata', 'status', this, 1, 'credential', 'id', [['user_hash', true], ['password_hash', false]], () => {
+            fetchUserData('/recorddata', 'status', this, 2, 'record', 'record_date', [['patient_id', false]], () => {
+            fetchUserData('/clientdata', 'status', this, 3, 'client', 'patient_id', [['practitioner_id', false]], () => {
+            fetchUserData('/patientdata', 'status', this, 4, 'patient', 'id', [['first_name', false], ['last_name', false], ['date_of_birth', false], ['street_address', false], ['contact_number', false], ['email', false]], () => {
             this.submit();});});});});
             // prevent default form submission
             return false;
@@ -186,8 +197,8 @@ const accountView = () => {
 };
 function actionsView(subhash) {
     return __awaiter(this, void 0, void 0, function* () {
-        let record = yield Promise.all([generateOptions('record_date', 'record'), generateOptions('patient_id', 'record')]);
-        let patient = yield Promise.all([generateOptions('patient_id', 'client'), generateOptions('last_name', 'patient'), generateOptions('first_name', 'patient')]);
+        let record = yield Promise.all([generateOptions('record_date', 'recordData'), generateOptions('patient_id', 'recordData')]);
+        let patient = yield Promise.all([generateOptions('patient_id', 'clientData'), generateOptions('last_name', 'patientData'), generateOptions('first_name', 'patientData')]);
         const actions = document.createElement('div');
         actions.innerHTML = `
         <md-tabs>
@@ -201,32 +212,10 @@ function actionsView(subhash) {
         const actionsSubView = document.createElement('div');
         var actionFormInner = `
         <div class="view-top-padding"></div>
-        <form class="view-input-container" action="/action" method="post" onsubmit="
-            if (document.getElementById('practitioner_id')) {
-                let getUserID = (form) => {
-                    // get value of practioner_id from indexedDB
-                    db = indexedDB.open('user_data');
-                    db.onsuccess = function(event) {
-                        let db = event.target.result;
-                        let objectStore = db.transaction('client', 'readonly').objectStore('client');
-                        let request = objectStore.get(document.getElementById('patient_id').value);
-                        request.onsuccess = function(event) {
-                            let practitioner = event.target.result;
-                            document.getElementById('practitioner_id').value = practitioner.practitioner_id;
-                            form.submit();
-                        };
-                        request.onerror = function(event) {
-                            console.log('Database error: ' + event.target.errorCode);
-                        };
-                    };
-                }
-                getUserID(this);
-                return false;
-            }
-        ">
+        <form class="view-input-container" action="/action" method="post">
             <md-outlined-select name="patient_id" label="Patient ID" id="patient_id" type="text" required onchange="
                 let patient = document.getElementById('patient_id').value;
-                // only if the record_date element exists
+                // only if the record_date element exists""
                 if (document.getElementById('record_date')) {
                     let records = document.getElementsByClassName('date-option');
                     for (let i=0; i<records.length; i++) {
@@ -265,7 +254,6 @@ function actionsView(subhash) {
                 </div>
             ` + actionFormInner + `
                 <input name="sub_hash" id="sub_hash" type="text" value="create" style="display: none;"></input>
-                <input name="practitioner_id" id="practitioner_id" type="text" value="" style="display: none;"></input>
                 <md-outlined-text-field name="location_id" label="Location ID" type="text" required>
                     <md-icon slot="trailing-icon">search</md-icon>
                 </md-outlined-text-field>
@@ -396,39 +384,32 @@ const setIndicator = (hash, id) => {
         indicator.classList.add('view-indicator');
     }
 };
-function generateOptions(column, store) {
+function generateOptions(column, variable) {
     return __awaiter(this, void 0, void 0, function* () {
-        let db = indexedDB.open('user_data');
         let promise = new Promise((resolve, reject) => {
-            let options = [];
-            db.onsuccess = function (event) {
-                let db = event.target.result;
-                let objectStore = db.transaction(store, 'readonly').objectStore(store);
-                let request = objectStore.openCursor(null, 'nextunique');
-                let row;
-                request.onsuccess = function (event) {
-                    let cursor = event.target.result;
-                    if (cursor) {
-                        row = JSON.stringify(cursor.value);
-                        const cIndex = row.indexOf(`\"${column}\":\"`);
-                        const vIndex = row.indexOf('\"', cIndex + column.length + 4);
-                        const rowVal = row.substring(cIndex, vIndex).substring(column.length + 4);
-                        options.push(rowVal);
-                        cursor.continue();
-                    }
-                    else {
-                        resolve(options);
-                    }
-                };
-                request.onerror = function (event) {
-                    console.log('Database error: ' + event.target.errorCode);
-                    reject([]);
-                };
-            };
-            db.onerror = function (event) {
-                console.log('Database error: ' + event.target.errorCode);
+            let option = [];
+            fetch('/option', {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ column: column, variable: variable })
+            }).then((response) => {
+                if (!response.ok) {
+                    throw new Error('HTTP error: ' + response.status);
+                }
+                let json = response.json();
+                return json;
+            }).then((data) => {
+                data = String(data).replace(new RegExp('\'', 'g'), '').replace(new RegExp(' ', 'g'), '').replace(new RegExp(column + ':', 'g'), '').split(',');
+                for (let i = 0; i < data.length; i++) {
+                    option.push(data[i]);
+                }
+                resolve(option);
+            }).catch((error) => {
+                console.error('Error:', error);
                 reject([]);
-            };
+            });
         });
         return promise;
     });
