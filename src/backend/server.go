@@ -303,7 +303,15 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			// search for specified value in session.Values
 			value := session.Values[variable].(string)
 			// get only the value of the specified column from the value
-			value = strings.Split(strings.Split(value, column+"\":\"")[1], "\"}")[0]
+			// loop through the variable and get all instances of the column
+			// and create a new string with only the values of the specified column
+			colStrings := strings.Split(value, column+"\":\"")
+			// reset value
+			value = ""
+			for i := 0; i < len(colStrings); i++ {
+				// concatenate the value of the specified column to the value string
+				value += strings.Split(colStrings[i], "\"")[0] + ","
+			}
 			// convert to json format
 			jsonData, err := json.Marshal(value)
 			if err != nil {

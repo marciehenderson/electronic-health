@@ -215,7 +215,7 @@ function actionsView(subhash) {
         <form class="view-input-container" action="/action" method="post">
             <md-outlined-select name="patient_id" label="Patient ID" id="patient_id" type="text" required onchange="
                 let patient = document.getElementById('patient_id').value;
-                // only if the record_date element exists""
+                // only if the record_date element exists
                 if (document.getElementById('record_date')) {
                     let records = document.getElementsByClassName('date-option');
                     for (let i=0; i<records.length; i++) {
@@ -232,7 +232,7 @@ function actionsView(subhash) {
             ">
                 <md-icon slot="trailing-icon">search</md-icon>
     `;
-        for (let i = 0; i < patient[0].length; i++) {
+        for (let i = 1; i < patient[0].length - 1; i++) {
             let value = patient[0][i] + ': ' + patient[1][i] + ', ' + patient[2][i];
             actionFormInner += `
             <md-select-option value="${patient[0][i]}">
@@ -294,10 +294,10 @@ function actionsView(subhash) {
                         <div slot="headline"></div>
                     </md-select-option>
             `;
-                for (let i = 0; i < record[0].length; i++) {
+                for (let i = 1; i < record[0].length - 1; i++) {
                     actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
-                        <div slot="headline">${record[0][i]}</div>
+                    <md-select-option value="${record[0][i].slice(0, 10) + " " + record[0][i].slice(10)}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
+                        <div slot="headline">${record[0][i].slice(0, 10) + " " + record[0][i].slice(10)}</div>
                     </md-select-option>
                 `;
                 }
@@ -322,10 +322,10 @@ function actionsView(subhash) {
                         <div slot="headline"></div>
                     </md-select-option>
             `;
-                for (let i = 0; i < record[0].length; i++) {
+                for (let i = 1; i < record[0].length - 1; i++) {
                     actionFormInner += `
-                    <md-select-option value="${record[0][i]}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
-                        <div slot="headline">${record[0][i]}</div>
+                    <md-select-option value="${record[0][i].slice(0, 10) + " " + record[0][i].slice(10)}" class="date-option" id="date-option-pid-${record[1][i]}-" style="display:none;">
+                        <div slot="headline">${record[0][i].slice(0, 10) + " " + record[0][i].slice(10)}</div>
                     </md-select-option>
                 `;
                 }
@@ -401,7 +401,7 @@ function generateOptions(column, variable) {
                 let json = response.json();
                 return json;
             }).then((data) => {
-                data = String(data).replace(new RegExp('\'', 'g'), '').replace(new RegExp(' ', 'g'), '').replace(new RegExp(column + ':', 'g'), '').split(',');
+                data = String(data).replace(new RegExp('\"', 'g'), '').replace(new RegExp(' ', 'g'), '').replace(new RegExp(column + ':', 'g'), '').split(',');
                 for (let i = 0; i < data.length; i++) {
                     option.push(data[i]);
                 }
