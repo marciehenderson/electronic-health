@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -94,14 +96,19 @@ func main() {
 	if !test {
 		for i := 0; i < 100; i++ {
 			// Generate a random user for the table
-			_, err := db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", randomCategory(), randomWord(10, defaultSeed), randomWord(10, defaultSeed), json.Number("0"))
+			_, err := db.Exec("INSERT INTO user (category, password_hash, password_salt, user_hash, user_salt, permissions) VALUES (?, ?, ?, ?, ?, ?)", randomCategory(), randomWord(10, defaultSeed), "", randomWord(10, defaultSeed), "", json.Number("0"))
 			// Log any errors
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 		// Insert test user
-		_, err = db.Exec("INSERT INTO user (category, password_hash, user_hash, permissions) VALUES (?, ?, ?, ?)", "admin", "test", "test", json.Number("1"))
+		// instantiate a hasher
+		hasherp := sha256.New()
+		hasherp.Write([]byte("testsaltp"))
+		hasheru := sha256.New()
+		hasheru.Write([]byte("test"))
+		_, err = db.Exec("INSERT INTO user (category, password_hash, password_salt, user_hash, user_salt, permissions) VALUES (?, ?, ?, ?, ?, ?)", "admin", base64.StdEncoding.EncodeToString(hasherp.Sum(nil)), "saltp", base64.StdEncoding.EncodeToString(hasheru.Sum(nil)), "", json.Number("1"))
 		// Log any errors
 		if err != nil {
 			log.Fatal(err)

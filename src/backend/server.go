@@ -2,6 +2,7 @@ package main
 
 // Import necessary packages
 import (
+	"crypto/sha256"
 	"crypto/tls"
 	"database/sql"
 	"encoding/base64"
@@ -126,10 +127,19 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			username := strings.Split(string(cred), ":")[0]
-			password := strings.Split(string(cred), ":")[1]
-			// Note: not needed for anything but compatability with the frontend at the moment
-			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			// get username and password from credentials
+			// hash the credentials using sha256
+			// and compare with hashed credentials in database
+			hasheru := sha256.New()
+			hasherp := sha256.New()
+			// hash the username
+			hasheru.Write([]byte(strings.Split(string(cred), ":")[0]))
+			username := base64.StdEncoding.EncodeToString(hasheru.Sum(nil))
+			// get user data from database
+			userData := dbHandler(dbData{query: "view", table: "user", cols: []string{"id", "password_hash", "password_salt", "user_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}})
+			// salt and hash the password
+			hasherp.Write([]byte(strings.Split(string(cred), ":")[1] + strings.Split(strings.Split(userData.(string), "\"password_salt\":\"")[1], "\"")[0]))
+			password := base64.StdEncoding.EncodeToString(hasherp.Sum(nil))
 			// Query database for user credentials
 			if dbHandler(dbData{query: "view", table: "user", cols: []string{"password_hash"}, keys: []string{"user_hash"}, refs: []interface{}{username}}) == "{\"password_hash\":\""+password+"\"}" {
 				// Set user credentials to session values
@@ -147,7 +157,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				// Log successful login
-				fmt.Println("Login successful")
+				fmt.Println("Login successful: " + userID)
 			} else {
 				fmt.Println("Login failed")
 			}
@@ -252,7 +262,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			locationID := inputValidation(r.Form.Get("location_id"), "basic")
 			recordDate := inputValidation(r.Form.Get("record_date"), "datetime")
-			if recordDate == "" {
+			if recordDate == "" && subHash == "/#actions+view" {
 				// find record_date in body and assign value to recordDate
 				recordDate = inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"record_date\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "datetime")
 				// fmt.Println(recordDate)

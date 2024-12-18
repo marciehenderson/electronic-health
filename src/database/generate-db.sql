@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS user (
     id INT AUTO_INCREMENT,
     category ENUM('patient', 'practitioner', 'admin') NOT NULL,
     password_hash CHAR(100) NOT NULL,
+    password_salt CHAR(100) NOT NULL,
     user_hash CHAR(100) NOT NULL,
+    user_salt CHAR(100) NOT NULL,
     permissions JSON NOT NULL,
     PRIMARY KEY (id)
 );
