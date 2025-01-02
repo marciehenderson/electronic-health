@@ -274,6 +274,16 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 			case "/#actions+create":
 				// create new record
 				dbHandler(dbData{query: "create", table: "record", cols: []string{"patient_id", "practitioner_id", "location_id", "record_type", "notes"}, data: []interface{}{patientID, practitionerID, locationID, recordType, notes}})
+				// update session values with new record data
+				recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{practitionerID}})
+				session.Values["recordData"] = recordData
+				// save session values
+				err := session.Save(r, w)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				// redirect to refresh page
 				w.Header().Set("Content-Type", "text/html")
 				http.Redirect(w, r, subHash, http.StatusSeeOther)
 			case "/#actions+modify":
@@ -281,6 +291,16 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				if locationID != "" && recordType != "" && notes != "" {
 					dbHandler(dbData{query: "modify", table: "record", cols: []string{"location_id", "record_type", "notes"}, keys: []string{"patient_id", "record_date"}, refs: []interface{}{patientID, recordDate}, data: []interface{}{locationID, recordType, notes}})
 				}
+				// update session values with new record data
+				recordData := dbHandler(dbData{query: "view", table: "record", cols: []string{"record_date", "patient_id"}, keys: []string{"practitioner_id"}, refs: []interface{}{practitionerID}})
+				session.Values["recordData"] = recordData
+				// save session values
+				err := session.Save(r, w)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				// redirect to refresh page
 				w.Header().Set("Content-Type", "text/html")
 				http.Redirect(w, r, subHash, http.StatusSeeOther)
 			case "/#actions+view":
