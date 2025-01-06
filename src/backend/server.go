@@ -32,6 +32,9 @@ var dbConfig = mysql.Config{
 	AllowNativePasswords: true,
 }
 
+// list of record types
+var recordTypes = []string{"check-up", "annual", "blood-work", "vaccination", "emergency"}
+
 // Declare custom types
 type dbData struct {
 	query string        // create, modify, view
@@ -267,7 +270,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 				recordDate = inputValidation(strings.ReplaceAll(strings.ReplaceAll(strings.Split(strings.Split(string(body), "name=\"record_date\"")[1], "--")[0], "\x0D", ""), "\x0A", ""), "datetime")
 				// fmt.Println(recordDate)
 			}
-			recordType := inputValidation(r.Form.Get("record_type"), "basic")
+			recordType := inputValidation(r.Form.Get("record_type"), "enum")
 			notes := inputValidation(r.Form.Get("notes"), "basic")
 			// Query database based on action sub-hash
 			switch subHash {
@@ -533,6 +536,15 @@ func inputValidation(input string, category string) string {
 		validated = strings.ReplaceAll(validated, "\\U+003A\\", ":")
 		// allow spaces in fetch requests
 		validated = strings.ReplaceAll(validated, "\\U+0020\\", " ")
+	case "enum":
+		// input validation for enum inputs
+		// specifically for record types
+		for i := 0; i < len(recordTypes); i++ {
+			if input == recordTypes[i] {
+				validated = recordTypes[i]
+				break
+			}
+		}
 	default:
 		fmt.Println("Invalid input category")
 	}
